@@ -99,36 +99,36 @@ class BaseOptions():
 		self.initialized = True
 		return parser
 
-		def gather_options(self, args=None):
-			if not self.initialized:
-				parser = argparse.ArgumentParser(
-					formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-			parser = self.initialize(parser)
-			self.parser = parser
+	def gather_options(self, args=None):
+		if not self.initialized:
+			parser = argparse.ArgumentParser(
+				formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+		parser = self.initialize(parser)
+		self.parser = parser
 
-			if args is None:
-				return self.parser.parse_args()
-			else:
-				return self.parser.parse_args(args)
+		if args is None:
+			return self.parser.parse_args()
+		else:
+			return self.parser.parse_args(args)
 
-		def print_options(self, opt):
-			message = ''
-			message += '----------------- Options ---------------\n'
-			for k, v in sorted(vars(opt).items()):
-				comment = ''
-				default = self.parser.get_default(k)
-			if v != default:
-				comment = '\t[default: %s]' % str(default)
-				message += '{:>25}: {:<30}{}\n'.format(str(k), str(v), comment)
-				message += '----------------- End -------------------'
-				print(message)
+	def print_options(self, opt):
+		message = ''
+		message += '----------------- Options ---------------\n'
+		for k, v in sorted(vars(opt).items()):
+			comment = ''
+			default = self.parser.get_default(k)
+		if v != default:
+			comment = '\t[default: %s]' % str(default)
+			message += '{:>25}: {:<30}{}\n'.format(str(k), str(v), comment)
+			message += '----------------- End -------------------'
+			print(message)
 
-		def parse(self, args=None):
-			opt = self.gather_options(args)
+	def parse(self, args=None):
+		opt = self.gather_options(args)
 
-			opt.sigma = opt.sigma_max
+		opt.sigma = opt.sigma_max
 
-			if len(opt.mlp_res_layers) == 1 and opt.mlp_res_layers[0] < 1:
-				opt.mlp_res_layers = []
+		if len(opt.mlp_res_layers) == 1 and opt.mlp_res_layers[0] < 1:
+			opt.mlp_res_layers = []
 
-			return opt		
+		return opt		
