@@ -13,8 +13,8 @@ class BaseOptions():
 
 		g_train = parser.add_argument_group('Training')
 		g_train.add_argument('--gpu_id', type=int, default=0)
-		g_train.add_arguemnt('--batch_size', type=int, default=4)
-		g_train.add_arugment('--learning_rate', type=float, default=1e-3)
+		g_train.add_argument('--batch_size', type=int, default=4)
+		g_train.add_argument('--learning_rate', type=float, default=1e-3)
 		g_train.add_argument('--num_iter', type=int, default=50000)
 		g_train.add_argument('--freq_plot', type=int, default=100)
 		g_train.add_argument('--freq_mesh', type=int, default=10000)
@@ -29,8 +29,6 @@ class BaseOptions():
 		g_sample = parser.add_argument_group('Sampling')
 		g_sample.add_argument('--num_sample_inout', type=int, default=8000)
 		g_sample.add_argument('--num_sample_color', type=int, default=0)	
-		g_sample.add_argument('--sigma_max', type=float, default=0.0, help='maximum sigma for sampling')
-		g_sample.add_argument('--sigma_min', type=float, default=0.0, help='minimum sigma for sampling')
 		g_sample.add_argument('--sigma', type=float, default=1.0, help='sigma for sampling')
 		g_sample.add_argument('--sigma_surface', type=float, default=1.0, help='sigma for sampling')
 
@@ -46,7 +44,6 @@ class BaseOptions():
 		g_model.add_argument('--hg_dim', type=int, default=256)
 
 		g_model.add_argument('--mlp_norm', type=str, default='group')
-		g_model.add_argument('--mlp_norm', type=str, default='group', help='normalization for volume branch')
 		g_model.add_argument('--mlp_dim', nargs='+', default=[257, 1024, 512, 256, 128, 1], type=int,
 			help='# of dimensions of mlp. no need to put the first channel')
 		g_model.add_argument('--mlp_dim_color', nargs='+', default=[1024, 512, 256, 128, 3], type=int,
@@ -125,9 +122,7 @@ class BaseOptions():
 
 	def parse(self, args=None):
 		opt = self.gather_options(args)
-
-		opt.sigma = opt.sigma_max
-
+        
 		if len(opt.mlp_res_layers) == 1 and opt.mlp_res_layers[0] < 1:
 			opt.mlp_res_layers = []
 
