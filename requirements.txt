@@ -21,3 +21,4 @@ torchvision==0.5.0
 tqdm==4.43.0
 trimesh==3.5.23
 xxhash==1.4.3
+gdown==4.2.0
