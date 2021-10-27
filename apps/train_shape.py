@@ -43,7 +43,7 @@ def train(opt):
 
 	net = HGPIFuPTF(opt, "orthogonal").to(device=cuda)
 	print("Using Network: ", net.name)
-    net.load_FB()
+	net.load_FB()
 
 # 	if opt.resume_epoch != -1:
 # 		print(f"resuming from epoch {opt.resume_epoch}")
