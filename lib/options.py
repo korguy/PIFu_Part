@@ -86,7 +86,7 @@ class BaseOptions():
 		parser.add_argument('--all_mesh', action='store_true', help='generate meshs from all hourglass output')
 		parser.add_argument('--num_gen_mesh_test', type=int, default=4,
 			help='how many meshes to generate during testing')
-		parser.add_argument('--load_checkpoints_path', type=str, defaults="./checkpoints")
+		parser.add_argument('--load_checkpoints_path', type=str, default="./checkpoints")
 		parser.add_argument('--load_netF_checkpoint_path', type=str, default="./checkpoints/netF", help='path to save checkpoints')
 		parser.add_argument('--load_netB_checkpoint_path', type=str, default="./checkpoints/netB", help='path to save checkpoints')
 		parser.add_argument('--use_aio_normal', action='store_true')
