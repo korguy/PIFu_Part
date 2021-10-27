@@ -7,6 +7,9 @@ class BaseOptions():
 		self.initialized = False
 
 	def initialize(self, parser):
+
+		parser.add_argument('--name', type=str, default='ptf_pifu')
+
 		g_data = parser.add_argument_group('Data')
 		g_data.add_argument('--dataroot', type=str, default='./data')
 		g_data.add_argument('--loadSize', type=int, default=512)
@@ -22,6 +25,13 @@ class BaseOptions():
 		g_train.add_argument('--freq_save_ply', type=int, default=10000)
 		g_train.add_argument('--resume_epoch', type=int, default=-1)
 		g_train.add_argument('--continue_train', action='store_true')
+		g_train.add_argument('--serial_batches', action='store_true',
+								help='if true, takes images in order to make batches, otherwise takes them randomly')
+		g_train.add_argument('--num_threads', default=1, type=int, help='# sthreads for loading data')
+		g_train.add_argument('--pin_memory', action='store_true', help='pin_memory')
+
+		g_train.add_argument('--results_path', type=str, default="./runs")
+
 
 		g_test = parser.add_argument_group('Testing')
 		g_test.add_argument('--resolution', type=int, default=512)
@@ -76,6 +86,7 @@ class BaseOptions():
 		parser.add_argument('--all_mesh', action='store_true', help='generate meshs from all hourglass output')
 		parser.add_argument('--num_gen_mesh_test', type=int, default=4,
 			help='how many meshes to generate during testing')
+		parser.add_argument('--load_checkpoints_path', type=str, defaults="./checkpoints")
 		parser.add_argument('--load_netF_checkpoint_path', type=str, default="./checkpoints/netF", help='path to save checkpoints')
 		parser.add_argument('--load_netB_checkpoint_path', type=str, default="./checkpoints/netB", help='path to save checkpoints')
 		parser.add_argument('--use_aio_normal', action='store_true')

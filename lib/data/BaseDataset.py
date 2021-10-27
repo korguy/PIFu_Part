@@ -26,9 +26,9 @@ class BaseDataset(Dataset):
 				'b_min' : None, # Bounding box (x_min, y_min, z_min) of target space
 				'b_max' : None, # Bounding box (x_max, y_max, z_max) of target space
 
-				'samples' : None, # [3, N] samples
+				'samples' : None, # [3, N] samples 
 				'labels' : None, # [1, N] labels
-				'parts' : None, # [1, N] parts
+				'parts' : None, # [num_parts, N] parts 
 
 				'img' : None, # [C, H, W] input images 512x512 for shape, 1024x1024 for color
 				'calib' : None, # [4, 4] calibration matrix
@@ -43,3 +43,13 @@ class BaseDataset(Dataset):
 
 	def __getitem__(self, index):
 		return self.get_item(index)
+
+
+folder
+ -folder
+  - abc.obj
+  - abc.pkl 
+  ...
+  ...
+  ...
+-folder

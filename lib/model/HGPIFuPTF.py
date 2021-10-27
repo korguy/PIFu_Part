@@ -18,7 +18,8 @@ class HGPIFuPTF(BasePIFuNet):
 	def __init__(self, 
 				opt, 
 				projection_mode='orthogonal', 
-				criteria={'occ': nn.MSELoss()}
+				criteria={'occ': nn.MSELoss(),
+						  'part': nn.MSELoss()}
 				):
 		super(HGPIFuPTF, self).__init__(
 			projection_mode=projection_mode,
@@ -70,9 +71,10 @@ class HGPIFuPTF(BasePIFuNet):
 
 	def load_FB(self):
 		self.netF.load_state_dict(torch.load(
-							self.opt.load_netF_checkpoint_path))
+							self.opt.load_netF_checkpoint_path), map_location=torch.device(f"cuda:{self.opt.gpu_id}"))
 		self.netB.load_state_dict(torch.load(
-							self.opt.load_netF_checkpoint_path))
+							self.opt.load_netF_checkpoint_path), map_location=torch.device(f"cuda:{self.opt.gpu_id}"))
+		print("Pix2Pix Network has been loaded.")
 
 	def filter(self, images):
 		'''
@@ -100,7 +102,7 @@ class HGPIFuPTF(BasePIFuNet):
 		self.im_feat_list, self.normx = self.image_filter(images)
 
 		if not self.training:
-		self.im_feat_list = [self.im_feat_list[-1]]
+			self.im_feat_list = [self.im_feat_list[-1]]
 
 	def forward(self, images, points, calibs, lables, parts, gamma):
-		self.filter(images)
+		pass
