@@ -31,6 +31,7 @@ class BaseOptions():
 		g_train.add_argument('--pin_memory', action='store_true', help='pin_memory')
 
 		g_train.add_argument('--results_path', type=str, default="./runs")
+		g_train.add_argument('--num_parts', type=int, default=26)
 
 
 		g_test = parser.add_argument_group('Testing')

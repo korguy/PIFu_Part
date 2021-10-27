@@ -24,8 +24,10 @@ class HGPIFuPTF(BasePIFuNet):
 		super(HGPIFuPTF, self).__init__(
 			projection_mode=projection_mode,
 			criteria=criteria)
+
 		self.name = 'pifu_ptf'
 		self.parts = None
+		
 		in_ch = 3
 		try:
 			if opt.use_front_normal:
@@ -44,15 +46,13 @@ class HGPIFuPTF(BasePIFuNet):
 			merge_layer=self.opt.merge_layer,
 			res_layers=self.opt.mlp_res_layers,
 			norm=self.opt.mlp_norm,
+			num_parts=self.opt.num_parts,
 			last_op=nn.Sigmoid())
 
 		self.spatial_enc = DepthNormalizer(opt)
 
 		self.im_feat_list = []
-		self.tmpx = None
-		self.normx = None
-		self.phi = None
-
+		self.intermediate_parts_list = []
 		self.intermediate_preds_list = []
 
 		init_net(self)
@@ -104,5 +104,55 @@ class HGPIFuPTF(BasePIFuNet):
 		if not self.training:
 			self.im_feat_list = [self.im_feat_list[-1]]
 
-	def forward(self, images, points, calibs, lables, parts, gamma):
+	def query(self, points, calibs, transforms=None, labels=None, parts=None):
+		'''
+		give 3d points, obtain 2d projection of these given the camera matrices.
+		filter needs to be called beforehand
+		then get parts 
+		the prediction is stored to self.preds
+		args:
+			points: [B, 3, N] 3d points in world space
+			calibs: [B, 3, 4] calibration matrices for each image
+			transforms: [B, 2, 3] image space coordinate transforms
+			labels: [B, C, N] ground truth labels (for supervision)
+			parts: [B, 26, N] ground truth parts (for supervision)
+		'''
+		xyz = self.projection(point, calibs, transforms)
+		xy = xyz[:, :2, :]
+
+		# if the point is outside bounding box, return outside.
+		in_bb = (xyz >= -1) & (xyz <= 1)
+		in_bb = in_bb[:, 0, :] & in_bb[:, 1, :] & in_bb[:, 2, :]
+		in_bb = in_bb[:, None, :].detach().float()
+
+		if labels is not None:
+			self.lables = in_bb * labels
+
+		sp_feat = self.spatial_enc(xyz, calibs=calibs)
+
+		for i, im_feat in enumerate(self.im_feat_list):
+			point_local_feat_list = [self.index(im_feat, xy), sp_feat]
+			point_local_feat = torch.cat(point_local_feat_list, 1)
+			pred, part = self.mlp(point_local_feat)
+			pred = in_bb * pred
+
+			intermediate_parts_list.append(part)
+			intermediate_preds_list.append(pred)
+
+		self.parts = self.intermediate_parts_list[-1]
+		self.preds = self.intermediate_preds_list[-1]
+
+
+	def get_im_feat(self):
+		return self.im_feat_list[-1]
+
+	def get_error(self):
 		pass
+
+	def forward(self, images, points, calibs, lables, parts, gamma):
+		self.filter(images)
+
+		res = self.get_preds()
+		error = self.get_error()
+
+		return res, error
