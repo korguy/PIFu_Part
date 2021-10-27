@@ -46,7 +46,7 @@ class BaseOptions():
 		g_sample.add_argument('--z_size', type=float, default=200.0, help='z normalization factor')
 
 		g_model = parser.add_argument_group('Model')
-		g_model.add_argument('--norm', type=str, default='group')
+		g_model.add_argument('--norm', type=str, default='batch')
 		g_model.add_argument('--netG', type=str, default='hgpifu')
 
 		g_model.add_argument('--num_stack', type=int, default=4)
@@ -54,7 +54,7 @@ class BaseOptions():
 		g_model.add_argument('--hg_down', type=str, default='ave_pool')
 		g_model.add_argument('--hg_dim', type=int, default=256)
 
-		g_model.add_argument('--mlp_norm', type=str, default='group')
+		g_model.add_argument('--mlp_norm', type=str, default='batch')
 		g_model.add_argument('--mlp_dim', nargs='+', default=[257, 1024, 512, 256, 128, 1], type=int,
 			help='# of dimensions of mlp. no need to put the first channel')
 		g_model.add_argument('--mlp_dim_color', nargs='+', default=[1024, 512, 256, 128, 3], type=int,
