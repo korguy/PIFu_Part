@@ -71,9 +71,9 @@ class HGPIFuPTF(BasePIFuNet):
 
 	def load_FB(self):
 		self.netF.load_state_dict(torch.load(
-							self.opt.load_netF_checkpoint_path), map_location=torch.device(f"cuda:{self.opt.gpu_id}"))
+							self.opt.load_netF_checkpoint_path, map_location=torch.device(f"cuda:{self.opt.gpu_id}")))
 		self.netB.load_state_dict(torch.load(
-							self.opt.load_netF_checkpoint_path), map_location=torch.device(f"cuda:{self.opt.gpu_id}"))
+							self.opt.load_netF_checkpoint_path, map_location=torch.device(f"cuda:{self.opt.gpu_id}")))
 		print("Pix2Pix Network has been loaded.")
 
 	def filter(self, images):
