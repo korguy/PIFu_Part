@@ -32,20 +32,20 @@ class MLP(nn.Module):
         for l in range(0, len(filter_channels)-1):
             if l in self.res_layers:
                 self.filters.append(nn.Conv1d(
-                    filter_channels[l] + filter_channels[0] * num_parts,
+                    (filter_channels[l] + filter_channels[0]) * num_parts,
                     filter_channels[l+1] * num_parts,
-                    1), groups=num_parts)
+                    1, groups=num_parts))
             else:
                 if l == 0:
                     self.filters.append(nn.Conv1d(
                     filter_channels[l],
-                    filter_channels[l+1],
+                    filter_channels[l+1] * num_parts,
                     1))
                 else:
                     self.filters.append(nn.Conv1d(
                         filter_channels[l]* num_parts,
                         filter_channels[l+1] * num_parts,
-                        1), groups=num_parts)
+                        1, groups=num_parts))
             if l != len(filter_channels)-2:
                 if norm == 'group':
                     self.norms.append(nn.GroupNorm(32, filter_channels[l+1]))
