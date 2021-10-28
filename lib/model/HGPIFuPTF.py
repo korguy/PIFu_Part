@@ -150,7 +150,7 @@ class HGPIFuPTF(BasePIFuNet):
 		for pred in self.intermediate_preds_list:
 			error['Err(occ)'] += self.criteria['occ'](pred, self.labels)
 		for part in self.intermediate_parts_list[-1]:
-			error['Err(part)'] += self.criteria['part'](part, self.gt_parts)
+			error['Err(part)'] += self.criteria['part'](part, self.gt_parts) * 0.1
 		return error
 
 
