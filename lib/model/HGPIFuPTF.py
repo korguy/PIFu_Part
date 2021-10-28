@@ -18,7 +18,7 @@ class HGPIFuPTF(BasePIFuNet):
 	def __init__(self, 
 				opt, 
 				projection_mode='orthogonal', 
-				criteria={'occ': nn.MSELoss(),
+				criteria={'occ': nn.CrossEntropyLoss(),
 						  'part': nn.MSELoss()}
 				):
 		super(HGPIFuPTF, self).__init__(
@@ -26,6 +26,7 @@ class HGPIFuPTF(BasePIFuNet):
 			criteria=criteria)
 
 		self.name = 'pifu_ptf'
+		self.gt_parts = None
 		self.parts = None
 		
 		in_ch = 3
@@ -142,6 +143,16 @@ class HGPIFuPTF(BasePIFuNet):
 		self.parts = self.intermediate_parts_list[-1]
 		self.preds = self.intermediate_preds_list[-1]
 
+	def get_error(self):
+		error = {}
+		error['Err(occ)'] = 0
+		error['Err(part)'] = 0
+		for pred in self.intermediate_preds_list:
+			error['Err(occ)'] += self.criteria['occ'](pred, self.labels)
+		for part in self.intermediate_parts_list[-1]:
+			error['Err(part)'] += self.criteria['part'](part, self.gt_parts)
+		return error
+
 
 	def get_im_feat(self):
 		return self.im_feat_list[-1]
@@ -150,6 +161,7 @@ class HGPIFuPTF(BasePIFuNet):
 		pass
 
 	def forward(self, images, points, calibs, lables, parts, gamma):
+		self.gt_parts = parts
 		self.filter(images)
 
 		res = self.get_preds()
