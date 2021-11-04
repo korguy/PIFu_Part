@@ -81,8 +81,8 @@ class MLP(nn.Module):
             if i == self.merge_layer:
                 phi = y.clone()
 
-        if self.last_op is not None:
-            y = self.last_op(y)
+        # if self.last_op is not None:
+        #     y = self.last_op(y)
 
         y *= parts_softmax.view(y.shape[0], y.shape[1], -1)
 
