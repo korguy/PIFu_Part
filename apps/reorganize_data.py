@@ -34,7 +34,7 @@ def main(args):
 		reorganize(path, subject)
 
 if __name__ == "__main__":
-	parser = argparse.ArgumentParser
+	parser = argparse.ArgumentParser()
 	parser.add_argument("-i", "--input", type=str, default="../data")
 	args = parser.parse_args()
 	main(args)
