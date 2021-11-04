@@ -21,9 +21,9 @@ def reorganize(base, name):
 		new_path = os.path.join(base, pose_name)
 		os.makedirs(new_path, exist_ok=True)
 		shutil.copyfile(part_file, os.path.join(new_path, f"{name}_part.json"))
-		shutil.copyfile(t_pose, os.path.join(new_path, f"{name}_t_pose.obj"))
+		shutil.copyfile(t_pose, os.path.join(new_path, f"{name}_t_posed.obj"))
 		shutil.copytree(tex_folder, os.path.join(new_path, "tex"))
-		shutil.move(os.path.join(base, name, pose), os.path.join(new_path, name))
+		shutil.move(os.path.join(base, name, pose), os.path.join(new_path, pose))
 	shutil.rmtree(os.path.join(base, name))
 
 def main(args):
