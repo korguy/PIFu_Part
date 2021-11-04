@@ -15,6 +15,7 @@ def reorganize(base, name):
 	tex_folder = os.path.join(base, name, "tex")
 	t_pose = os.path.join(base, name, f"{name}_t_posed.obj")
 	poses = [x for x in os.listdir(os.path.join(base, name)) if "posed.obj" in x]
+	poses.append(poses.pop(poses.index(f"{name}_t_posed.obj")))
 	for pose in poses:
 		pose_name = pose[:-10]
 		new_path = os.path.join(base, pose_name)
