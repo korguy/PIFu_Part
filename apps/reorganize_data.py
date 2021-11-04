@@ -13,7 +13,7 @@ import argparse
 def reorganize(base, name):
 	part_file = os.path.join(base, name, f"{name}_part.json")
 	tex_folder = os.path.join(base, name, "tex")
-	t_pose = os.path.join(base, name, f"{name}_t_pose.obj")
+	t_pose = os.path.join(base, name, f"{name}_t_posed.obj")
 	poses = [x for x in os.listdir(os.path.join(base, name)) if "posed.obj" in x]
 	for pose in poses:
 		pose_name = pose[:-10]
