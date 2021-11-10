@@ -1,6 +1,5 @@
 #from data.config import raw_dataset, render_dataset, archive_dataset, model_list, zip_path
 
-from lib.renderer.camera import Camera
 import numpy as np
 from lib.renderer.mesh import load_obj_mesh, compute_tangent, compute_normal, load_obj_mesh_mtl
 from lib.renderer.camera import Camera

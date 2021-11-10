@@ -7,11 +7,8 @@
 # this module file must exist in the same directory as the tutorial files
 # to be imported properly.
 
-
 import os
-
 from OpenGL.GL import *
-
 
 # Function that creates and compiles shaders according to the given type (a GL enum value) and
 # shader program (a file containing a GLSL program).
