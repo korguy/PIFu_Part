@@ -143,7 +143,6 @@ def rotateBand2(x, R):
     dst[4] = d4 * s_scale_dst4
 
     return dst
-render_prt_ortho(os.path.join(args.out_dir, subject), path, name, pose, shs, rndr, rndr_uv, args.size, 1, 1, pitch=[0])
 
 def render_prt_ortho(out_path, folder_name, subject_name, pose_name, shs, rndr, rndr_uv, im_size, angl_step=4, n_light=1, pitch=[0]):
     cam = Camera(width=im_size, height=im_size)
