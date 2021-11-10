@@ -143,8 +143,9 @@ def rotateBand2(x, R):
     dst[4] = d4 * s_scale_dst4
 
     return dst
+render_prt_ortho(os.path.join(args.out_dir, subject), path, name, pose, shs, rndr, rndr_uv, args.size, 1, 1, pitch=[0])
 
-def render_prt_ortho(out_path, folder_name, subject_name, shs, rndr, rndr_uv, im_size, angl_step=4, n_light=1, pitch=[0]):
+def render_prt_ortho(out_path, folder_name, subject_name, pose_name, shs, rndr, rndr_uv, im_size, angl_step=4, n_light=1, pitch=[0]):
     cam = Camera(width=im_size, height=im_size)
     cam.ortho_ratio = 0.4 * (512 / im_size)
     cam.near = -100
@@ -152,9 +153,17 @@ def render_prt_ortho(out_path, folder_name, subject_name, shs, rndr, rndr_uv, im
     cam.sanity_check()
 
     # set path for obj, prt
-    mesh_file = os.path.join(folder_name, subject_name + '_100k.obj')
+    mesh_file = os.path.join(folder_name, "{}_{}_posed.obj".format(subject_name, pose_name))
     if not os.path.exists(mesh_file):
         print('ERROR: obj file does not exist!!', mesh_file)
+        return 
+    t_mesh_file = os.path.join(folder_name, "{}_t_posed.obj".format(subject_name))
+    if not os.path.exists(t_mesh_file):
+        print('ERROR: t obj file does not exist!!', t_mesh_file)
+        return 
+    part_file = os.path.join(folder_name, "{}_part.json".format(subject_name))
+    if not os.path.exists(part_file):
+        print('ERROR: part file does not exist!!', part_file)
         return 
     prt_file = os.path.join(folder_name, 'bounce', 'bounce0.txt')
     if not os.path.exists(prt_file):
@@ -164,7 +173,9 @@ def render_prt_ortho(out_path, folder_name, subject_name, shs, rndr, rndr_uv, im
     if not os.path.exists(face_prt_file):
         print('ERROR: face prt file does not exist!!!', prt_file)
         return
-    text_file = os.path.join(folder_name, 'tex', subject_name + '_dif_2k.jpg')
+    tex = os.listdir(os.path.join(folder_name, 'tex'))
+    tex = [x for x in tex if 'dif' in x]
+    text_file = os.path.join(folder_name, 'tex', tex[0])
     if not os.path.exists(text_file):
         print('ERROR: dif file does not exist!!', text_file)
         return             
@@ -194,6 +205,8 @@ def render_prt_ortho(out_path, folder_name, subject_name, shs, rndr, rndr_uv, im
     rndr_uv.set_albedo(texture_image)
 
     os.makedirs(os.path.join(out_path, 'GEO', 'OBJ', subject_name),exist_ok=True)
+    os.makedirs(os.path.join(out_path, 'GEO', 'T_OBJ', subject_name), exist_ok=True)
+    os.makedirs(os.path.join(out_path, 'PART', subject_name), exist_ok=True)
     os.makedirs(os.path.join(out_path, 'PARAM', subject_name),exist_ok=True)
     os.makedirs(os.path.join(out_path, 'RENDER', subject_name),exist_ok=True)
     os.makedirs(os.path.join(out_path, 'MASK', subject_name),exist_ok=True)
@@ -208,6 +221,12 @@ def render_prt_ortho(out_path, folder_name, subject_name, shs, rndr, rndr_uv, im
 
     # copy obj file
     cmd = 'cp %s %s' % (mesh_file, os.path.join(out_path, 'GEO', 'OBJ', subject_name))
+    print(cmd)
+    os.system(cmd)
+    cmd = 'cp %s %s' % (t_mesh_file, os.path.join(out_path, 'GEO', 'T_OBJ', subject_name))
+    print(cmd)
+    os.system(cmd)
+    cmd = 'cp %s %s' % (part_file, os.path.join(out_path, 'PART', subject_name))
     print(cmd)
     os.system(cmd)
 
@@ -269,11 +288,11 @@ if __name__ == '__main__':
     shs = np.load('./env_sh.npy')
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('-i', '--input', type=str, default='/home/shunsuke/Downloads/rp_dennis_posed_004_OBJ')
-    parser.add_argument('-o', '--out_dir', type=str, default='/home/shunsuke/Documents/hf_human')
+    parser.add_argument('-i', '--input', type=str, default='./data')
+    parser.add_argument('-o', '--out_dir', type=str, default='./training_data')
     parser.add_argument('-m', '--ms_rate', type=int, default=1, help='higher ms rate results in less aliased output. MESA renderer only supports ms_rate=1.')
     parser.add_argument('-e', '--egl',  action='store_true', help='egl rendering option. use this when rendering with headless server with NVIDIA GPU')
-    parser.add_argument('-s', '--size',  type=int, default=512, help='rendering image size')
+    parser.add_argument('-s', '--size',  type=int, default=1024, help='rendering image size')
     args = parser.parse_args()
 
     # NOTE: GL context has to be created before any other OpenGL function loads.
@@ -284,7 +303,15 @@ if __name__ == '__main__':
     rndr = PRTRender(width=args.size, height=args.size, ms_rate=args.ms_rate, egl=args.egl)
     rndr_uv = PRTRender(width=args.size, height=args.size, uv_mode=True, egl=args.egl)
 
-    if args.input[-1] == '/':
-        args.input = args.input[:-1]
-    subject_name = args.input.split('/')[-1][:-4]
-    render_prt_ortho(args.out_dir, args.input, subject_name, shs, rndr, rndr_uv, args.size, 1, 1, pitch=[0])
+    subjects = os.listdir(args.input)
+    subjects = [x for x in subjects if '.' not in x]
+
+    for subject in tqdm(subjects):
+        path = os.path.join(args.input, subject)
+        name = subject.split('_')[0]
+        pose = "".join(subject.split('_')[1:])
+        render_prt_ortho(os.path.join(args.out_dir, subject), path, name, pose, shs, rndr, rndr_uv, args.size, 1, 1, pitch=[0])
+    # if args.input[-1] == '/':
+    #     args.input = args.input[:-1]
+    # subject_name = args.input.split('/')[-1][:-4]
+    # render_prt_ortho(args.out_dir, args.input, subject_name, shs, rndr, rndr_uv, args.size, 1, 1, pitch=[0])
