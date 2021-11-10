@@ -145,9 +145,6 @@ def testPRT(dir_path, n=40):
     except:
         obj_path = os.path.join(dir_path, sub_name + '_200k.obj')
         assert os.path.exists(obj_path)
-    
-    if os.path.exists(os.path.join(dir_path, 'bounce')):
-        return 
 
     os.makedirs(os.path.join(dir_path, 'bounce'), exist_ok=True)
     PRT, F = computePRT(obj_path, n, 2)
