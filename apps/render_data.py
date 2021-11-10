@@ -172,12 +172,12 @@ def render_prt_ortho(out_path, folder_name, subject_name, pose_name, shs, rndr, 
         print('ERROR: face prt file does not exist!!!', prt_file)
         return
     tex = os.listdir(os.path.join(folder_name, 'tex'))
-    tex = [x for x in tex if 'dif' in x]
+    tex = [x for x in tex if 'dif' in x and x[0] != '.']
     text_file = os.path.join(folder_name, 'tex', tex[0])
     if not os.path.exists(text_file):
         print('ERROR: dif file does not exist!!', text_file)
         return             
-
+    
     texture_image = cv2.imread(text_file)
     texture_image = cv2.cvtColor(texture_image, cv2.COLOR_BGR2RGB)
 
@@ -201,7 +201,9 @@ def render_prt_ortho(out_path, folder_name, subject_name, pose_name, shs, rndr, 
 
     rndr_uv.set_mesh(vertices, faces, normals, faces_normals, textures, face_textures, prt, face_prt, tan, bitan)   
     rndr_uv.set_albedo(texture_image)
-
+    
+    subject_name += "_" + pose_name
+    
     os.makedirs(os.path.join(out_path, 'GEO', 'OBJ', subject_name),exist_ok=True)
     os.makedirs(os.path.join(out_path, 'GEO', 'T_OBJ', subject_name), exist_ok=True)
     os.makedirs(os.path.join(out_path, 'PART', subject_name), exist_ok=True)
@@ -307,8 +309,8 @@ if __name__ == '__main__':
     for subject in tqdm(subjects):
         path = os.path.join(args.input, subject)
         name = subject.split('_')[0]
-        pose = "".join(subject.split('_')[1:])
-        render_prt_ortho(os.path.join(args.out_dir, subject), path, name, pose, shs, rndr, rndr_uv, args.size, 1, 1, pitch=[0])
+        pose = "_".join(subject.split('_')[1:])
+        render_prt_ortho(args.out_dir, path, name, pose, shs, rndr, rndr_uv, args.size, 1, 1, pitch=[0])
     # if args.input[-1] == '/':
     #     args.input = args.input[:-1]
     # subject_name = args.input.split('/')[-1][:-4]
