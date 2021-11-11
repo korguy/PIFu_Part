@@ -5,3 +5,4 @@ __pycache__/
 data/
 training_data/
 val2017/
+__pycache__
