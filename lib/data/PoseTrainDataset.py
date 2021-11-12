@@ -48,7 +48,7 @@ def save_samples_truncted_prob(fname, points, prob):
                           points.shape[0])
                       )
 
-class TrainDataset(Dataset):
+class PoseTrainDataset(Dataset):
 
 	@staticmethod
     def modify_commandline_options(parser, is_train):
