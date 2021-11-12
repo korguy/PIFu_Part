@@ -9,7 +9,7 @@ from .HGFilters import HGFilter
 from ..net_util import init_net
 from ..networks import define_G
 
-class HGPIFuPTF(BasePIFuNet):
+class HGPIFuPart(BasePIFuNet):
 	'''
 	HGPIFuPTF uses stacked hourglass as an image encoder
 	+ per part training has been added
@@ -21,11 +21,11 @@ class HGPIFuPTF(BasePIFuNet):
 				criteria={'occ': nn.CrossEntropyLoss(),
 						  'part': nn.MSELoss()}
 				):
-		super(HGPIFuPTF, self).__init__(
+		super(HGPIFuPart, self).__init__(
 			projection_mode=projection_mode,
 			criteria=criteria)
 
-		self.name = 'pifu_ptf'
+		self.name = 'pifu_part'
 		self.gt_parts = None
 		self.parts = None
 		

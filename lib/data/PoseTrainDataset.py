@@ -19,11 +19,32 @@ def load_trimesh(root_dir):
     meshs = {}
     for i, f in enumerate(folders):
         sub_name = f
-        meshs[sub_name] = trimesh.load(os.path.join(root_dir, f, '%s_posed.obj' % sub_name))
+        meshs[sub_name] = trimesh.load(os.path.join(root_dir, f, '%s_posed.obj' % sub_name), process=False, maintain_order=True,
+                                      skip_uv=True)
         #### mesh = trimesh.load("alvin_t_posed.obj",process=False, maintain_order=True, skip_uv=True)
 
     return meshs
 
+def save_samples_truncated_part(fname, points, part):
+    '''
+    points: [N, 3] points sampled from mesh
+    part: [N, 20] one hot vector representation
+    '''
+    part_idx = np.argmax(part, axis=1)
+    r = ((255/20)*part_idx).reshape((-1, 1))
+    g = (255//(part_idx+1)).reshape((-1, 1))
+    b = (255/20*(20-part_idx)).reshape((-1, 1))
+    
+    to_save = np.concatenate([points, r,g, b], axis=-1)
+    return np.savetxt(fname,
+                  to_save,
+                  fmt='%.6f %.6f %.6f %d %d %d',
+                  comments='',
+                  header=(
+                      'ply\nformat ascii 1.0\nelement vertex {:d}\nproperty float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\nend_header').format(
+                      points.shape[0])
+                  )
+    
 def save_samples_truncted_prob(fname, points, prob):
     '''
     Save the visualization of sampling to a ply file.
@@ -50,7 +71,7 @@ def save_samples_truncted_prob(fname, points, prob):
 
 class PoseTrainDataset(Dataset):
 
-	@staticmethod
+    @staticmethod
     def modify_commandline_options(parser, is_train):
         return parser
 
@@ -78,9 +99,10 @@ class PoseTrainDataset(Dataset):
 
         self.B_MIN = np.array([-128, -28, -128]) / 128
         self.B_MAX = np.array([128, 228, 128]) / 128
-
+        self.num_views = 1
         self.is_train = (phase == 'train')
         self.load_size = self.opt.loadSizeSmall
+      
 
         self.num_sample_inout = self.opt.num_sample_inout
         self.num_sample_color = self.opt.num_sample_color
@@ -169,9 +191,9 @@ class PoseTrainDataset(Dataset):
             scale_intrinsic[2, 2] = scale / ortho_ratio
             # Match image pixel space to image uv space
             uv_intrinsic = np.identity(4)
-            uv_intrinsic[0, 0] = 1.0 / float(self.opt.loadSize // 2)
-            uv_intrinsic[1, 1] = 1.0 / float(self.opt.loadSize // 2)
-            uv_intrinsic[2, 2] = 1.0 / float(self.opt.loadSize // 2)
+            uv_intrinsic[0, 0] = 1.0 / float(self.load_size // 2)
+            uv_intrinsic[1, 1] = 1.0 / float(self.load_size // 2)
+            uv_intrinsic[2, 2] = 1.0 / float(self.load_size // 2)
             # Transform under image pixel space
             trans_intrinsic = np.identity(4)
 
@@ -213,8 +235,8 @@ class PoseTrainDataset(Dataset):
                     dx = 0
                     dy = 0
 
-                trans_intrinsic[0, 3] = -dx / float(self.opt.loadSize // 2)
-                trans_intrinsic[1, 3] = -dy / float(self.opt.loadSize // 2)
+                trans_intrinsic[0, 3] = -dx / float(self.load_size // 2)
+                trans_intrinsic[1, 3] = -dy / float(self.load_size // 2)
 
                 x1 = int(round((w - tw) / 2.)) + dx
                 y1 = int(round((h - th) / 2.)) + dy
@@ -279,11 +301,12 @@ class PoseTrainDataset(Dataset):
         # one-hot vectors of the sampled points
         surface_points_body_parts = []
         
-        with open(os.path.join(self.PART, subject, "%s.json" % subject)) as f: 
+        with open(os.path.join(self.PART, subject, "%s_part.json" % subject.split('_')[0])) as f: 
             json_data = json.load(f)
         
         surface_points_faces = mesh.faces[surface_points_face_indices]
         surface_points_vertices_indices = []
+        
         for single_face in surface_points_faces:
             surface_points_vertices_indices.append(single_face[0]) # take the first vertex of the face as a representative
         
@@ -300,14 +323,13 @@ class PoseTrainDataset(Dataset):
         
         for i in range(0, self.num_sample_inout // 4):
             surface_points_body_parts.append([0 for i in range(20)]) # append zero vectors [0, 0, 0, ... , 0] 
+            
         s = np.arange(sample_points.shape[0])
         np.random.shuffle(s)
         sample_points = sample_points[s]
-        surface_points_body_parts = surface_points_body_parts[s]
+        surface_points_body_parts = np.array(surface_points_body_parts)[s]
         #np.random.shuffle(sample_points)
-        
-        len(sample_points)
-        
+                
         inside = mesh.contains(sample_points)
         inside_points = sample_points[inside]
         inside_parts = surface_points_body_parts[inside]
@@ -330,8 +352,10 @@ class PoseTrainDataset(Dataset):
         labels = np.concatenate([np.ones((1, inside_points.shape[0])), np.zeros((1, outside_points.shape[0]))], 1)
         parts = np.concatenate([inside_parts, outside_parts], 0).T
 
-        # save_samples_truncted_prob('out.ply', samples.T, labels.T)
-        # exit()
+#         save_samples_truncted_prob('./out.ply', samples.T, labels.T)
+#         exit()
+        save_samples_truncated_part('./part.ply', samples.T, parts.T)
+        exit()
 
         samples = torch.Tensor(samples).float()
         labels = torch.Tensor(labels).float()
@@ -419,8 +443,7 @@ class PoseTrainDataset(Dataset):
             'b_min': self.B_MIN,
             'b_max': self.B_MAX,
         }
-        render_data = self.get_render(subject, num_views=self.num_views, yid=yid, pid=pid,
-                                        random_sample=self.opt.random_multiview)
+        render_data = self.get_render(subject, num_views=self.num_views, yid=yid, pid=pid)
         res.update(render_data)
 
         if self.opt.num_sample_inout:
@@ -445,5 +468,5 @@ class PoseTrainDataset(Dataset):
         #     print(e)
         #     return self.get_item(index=random.randint(0, self.__len__() - 1))
 
-	def __getitem__(self, index):
-		return self.get_item(index)
+    def __getitem__(self, index):
+        return self.get_item(index)

@@ -33,7 +33,6 @@ class BaseOptions():
 
 		g_train.add_argument('--results_path', type=str, default="./runs")
 		g_train.add_argument('--num_parts', type=int, default=26)
-		g_train.add_argument('--random_bg', type=bool, default=True)
 
 		g_train.add_argument('--bg_path', type=str, default='./val2017')
 

@@ -1,2 +1,2 @@
 from .MLP import MLP
-from .HGPIFuPTF import HGPIFuPTF
+from .HGPIFuPart import HGPIFuPart
