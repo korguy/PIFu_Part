@@ -144,6 +144,11 @@ def rotateBand2(x, R):
     return dst
 
 def render_prt_ortho(out_path, folder_name, subject_name, pose_name, shs, rndr, rndr_uv, im_size, angl_step=4, n_light=1, pitch=[0]):
+    fd = subject_name + "_" + pose_name
+    
+    if os.path.exists(os.path.join(out_path, 'RENDER', fd)):
+        return
+    
     cam = Camera(width=im_size, height=im_size)
     cam.ortho_ratio = 0.4 * (512 / im_size)
     cam.near = -100
@@ -184,7 +189,7 @@ def render_prt_ortho(out_path, folder_name, subject_name, pose_name, shs, rndr, 
     vertices, faces, normals, faces_normals, textures, face_textures = load_obj_mesh(mesh_file, with_normal=True, with_texture=True)
     vmin = vertices.min(0)
     vmax = vertices.max(0)
-    up_axis = 1 if (vmax-vmin).argmax() == 1 else 2
+    up_axis = 1
     
     vmed = np.median(vertices, 0)
     vmed[up_axis] = 0.5*(vmax[up_axis]+vmin[up_axis])
@@ -202,8 +207,8 @@ def render_prt_ortho(out_path, folder_name, subject_name, pose_name, shs, rndr, 
     rndr_uv.set_mesh(vertices, faces, normals, faces_normals, textures, face_textures, prt, face_prt, tan, bitan)   
     rndr_uv.set_albedo(texture_image)
     
-    subject_name += "_" + pose_name
-    
+    subject_name = subject_name + "_" + pose_name
+        
     os.makedirs(os.path.join(out_path, 'GEO', 'OBJ', subject_name),exist_ok=True)
     os.makedirs(os.path.join(out_path, 'GEO', 'T_OBJ', subject_name), exist_ok=True)
     os.makedirs(os.path.join(out_path, 'PART', subject_name), exist_ok=True)
