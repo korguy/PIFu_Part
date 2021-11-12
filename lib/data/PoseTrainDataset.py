@@ -10,9 +10,29 @@ from PIL.ImageFilter import GaussianBlur
 import trimesh
 import logging
 import json
+from math import sqrt
+import datetime
 
 log = logging.getLogger('trimesh')
 log.setLevel(40)
+
+def get_part(file, vertices, points, body_parts):
+    def get_dist(pt1, pt2):
+        return sqrt((pt1[0]-pt2[0])**2 +(pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
+    part = []
+    for point in points:
+        _min = float('inf')
+        _idx = 1
+        for idx, vertice in enumerate(vertices[::5]):
+            dist = get_dist(point, vertice)
+            if _min > dist:
+                _min = dist
+                _idx = (idx*5)+1
+        tmp = [0 for i in range(20)]
+        tmp[ body_parts.index(file[str(_idx+1)]) ] = 1 # one-hot vector making
+        part.append(tmp)
+    part = np.array(part)
+    return part
 
 def load_trimesh(root_dir):
     folders = os.listdir(root_dir)
@@ -164,6 +184,8 @@ class PoseTrainDataset(Dataset):
         render_list = []
         mask_list = []
         extrinsic_list = []
+        
+        vid = 0
 
         param_path = os.path.join(self.PARAM, subject, '%d_%d_%02d.npy' % (vid, pitch, 0))
         render_path = os.path.join(self.RENDER, subject, '%d_%d_%02d.jpg' % (vid, pitch, 0))
@@ -276,10 +298,10 @@ class PoseTrainDataset(Dataset):
             render = (1-mask).expand_as(render) * bg + render
 
         return {
-            'img': torch.tensor(render_list[0]),
-            'calib': torch.tensor(calib_list[0]),
-            'extrinsic': torch.tensor(extrinsic_list[0]),
-            'mask': torch.tensor(mask_list[0])
+            'img': render_list[0],
+            'calib': calib_list[0],
+            'extrinsic': extrinsic_list[0],
+            'mask': mask_list[0]
         }
 
     def select_sampling_method(self, subject):
@@ -317,11 +339,14 @@ class PoseTrainDataset(Dataset):
             
         # add random points within image space
         length = self.B_MAX - self.B_MIN
+        ### New
         random_points = np.random.rand(self.num_sample_inout // 4, 3) * length + self.B_MIN
         sample_points = np.concatenate([sample_points, random_points], 0)
-        
-        for i in range(0, self.num_sample_inout // 4):
-            surface_points_body_parts.append([0 for i in range(20)]) # append zero vectors [0, 0, 0, ... , 0] 
+        random_parts = get_part(json_data, mesh.vertices, random_points, body_parts)
+        surface_points_body_parts = np.concatenate([surface_points_body_parts, random_parts], 0)
+        ###
+#         for i in range(0, self.num_sample_inout // 4):
+#             surface_points_body_parts.append([0 for i in range(20)]) # append zero vectors [0, 0, 0, ... , 0] 
             
         s = np.arange(sample_points.shape[0])
         np.random.shuffle(s)
@@ -353,7 +378,7 @@ class PoseTrainDataset(Dataset):
 
 #         save_samples_truncted_prob('./out.ply', samples.T, labels.T)
 #         exit()
-#         save_samples_truncated_part('./part.ply', samples.T, parts.T)
+        save_samples_truncated_part('./part.ply', samples.T, parts.T)
 #         exit()
 
         samples = torch.Tensor(samples).float()

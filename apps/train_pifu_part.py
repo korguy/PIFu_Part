@@ -27,15 +27,14 @@ writer = SummaryWriter(summary_path)
 def train(opt):
     cuda = torch.device(f'cuda:{opt.gpu_id}')
 
-#     train_dataset = PoseTrainDataset(opt, phase='train')
+    train_dataset = PoseTrainDataset(opt, phase='train')
     test_dataset = PoseTrainDataset(opt, phase='eval')
+    projection_mode = train_dataset.projection_mode
 
-#     projection_mode = train_dataset.projection_mode
-
-# 	train_data_loader = DataLoader(train_dataset,
-# 									batch_size=opt.batch_size, shuffle=not opt.serial_batches,
-# 									num_workers=opt.num_threads, pin_memory=opt.pin_memory)
-# 	print('train data size: ', len(train_data_loader))
+    train_data_loader = DataLoader(train_dataset,
+                                    batch_size=opt.batch_size, shuffle=not opt.serial_batches,
+                                    num_workers=opt.num_threads, pin_memory=opt.pin_memory)
+    print('train data size: ', len(train_data_loader))
     test_data_loader = DataLoader(test_dataset,
                                     batch_size=1, shuffle=True,
                                     num_workers=opt.num_threads, pin_memory=opt.pin_memory)
@@ -48,25 +47,25 @@ def train(opt):
             except:
                 print(key, tmp[key])
 
-# 	net = HGPIFuPart(opt, "orthogonal").to(device=cuda)
-# 	print("Using Network: ", net.name)
-# 	net.load_FB()
+    net = HGPIFuPart(opt, "orthogonal").to(device=cuda)
+    print("Using Network: ", net.name)
+    net.load_FB()
 
-# 	if opt.resume_epoch != -1:
-# 		print(f"resuming from epoch {opt.resume_epoch}")
-# 		net.load_state_dict(torch.load(os.path.join(opt.checkpoints_path,
-# 													opt.name,
-# 													f"net_epoch_{opt.resume_epoch}")))
-# 	optimzer = torch.optim.RMSprop(net.parameters(), lr=opt.learning_rate)
-# 	scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-# 	for _ in range(opt.resume_epoch):
-# 		scheduler.step()
+    if opt.resume_epoch != -1:
+        print(f"resuming from epoch {opt.resume_epoch}")
+        net.load_state_dict(torch.load(os.path.join(opt.checkpoints_path,
+                                                    opt.name,
+                                                    f"net_epoch_{opt.resume_epoch}")))
+    optimzer = torch.optim.RMSprop(net.parameters(), lr=opt.learning_rate)
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
+    for _ in range(opt.resume_epoch):
+        scheduler.step()
 
-# 	def set_train():
-# 		net.train()
+    def set_train():
+        net.train()
 
-# 	def set_eval():
-# 		net.eval()
+    def set_eval():
+        net.eval()
 
 # 	os.makedirs(opt.checkpoints_path, exist_ok=True)
 # 	os.makedirs(opt.results_path, exist_ok=True)
