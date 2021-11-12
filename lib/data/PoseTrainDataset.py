@@ -165,122 +165,121 @@ class PoseTrainDataset(Dataset):
         mask_list = []
         extrinsic_list = []
 
-        for vid in view_ids:
-            param_path = os.path.join(self.PARAM, subject, '%d_%d_%02d.npy' % (vid, pitch, 0))
-            render_path = os.path.join(self.RENDER, subject, '%d_%d_%02d.jpg' % (vid, pitch, 0))
-            mask_path = os.path.join(self.MASK, subject, '%d_%d_%02d.png' % (vid, pitch, 0))
+        param_path = os.path.join(self.PARAM, subject, '%d_%d_%02d.npy' % (vid, pitch, 0))
+        render_path = os.path.join(self.RENDER, subject, '%d_%d_%02d.jpg' % (vid, pitch, 0))
+        mask_path = os.path.join(self.MASK, subject, '%d_%d_%02d.png' % (vid, pitch, 0))
 
-            # loading calibration data
-            param = np.load(param_path, allow_pickle=True)
-            # pixel unit / world unit
-            ortho_ratio = param.item().get('ortho_ratio')
-            # world unit / model unit
-            scale = param.item().get('scale')
-            # camera center world coordinate
-            center = param.item().get('center')
-            # model rotation
-            R = param.item().get('R')
+        # loading calibration data
+        param = np.load(param_path, allow_pickle=True)
+        # pixel unit / world unit
+        ortho_ratio = param.item().get('ortho_ratio')
+        # world unit / model unit
+        scale = param.item().get('scale')
+        # camera center world coordinate
+        center = param.item().get('center')
+        # model rotation
+        R = param.item().get('R')
 
-            translate = -np.matmul(R, center).reshape(3, 1)
-            extrinsic = np.concatenate([R, translate], axis=1)
-            extrinsic = np.concatenate([extrinsic, np.array([0, 0, 0, 1]).reshape(1, 4)], 0)
-            # Match camera space to image pixel space
-            scale_intrinsic = np.identity(4)
-            scale_intrinsic[0, 0] = scale / ortho_ratio
-            scale_intrinsic[1, 1] = -scale / ortho_ratio
-            scale_intrinsic[2, 2] = scale / ortho_ratio
-            # Match image pixel space to image uv space
-            uv_intrinsic = np.identity(4)
-            uv_intrinsic[0, 0] = 1.0 / float(self.load_size // 2)
-            uv_intrinsic[1, 1] = 1.0 / float(self.load_size // 2)
-            uv_intrinsic[2, 2] = 1.0 / float(self.load_size // 2)
-            # Transform under image pixel space
-            trans_intrinsic = np.identity(4)
+        translate = -np.matmul(R, center).reshape(3, 1)
+        extrinsic = np.concatenate([R, translate], axis=1)
+        extrinsic = np.concatenate([extrinsic, np.array([0, 0, 0, 1]).reshape(1, 4)], 0)
+        # Match camera space to image pixel space
+        scale_intrinsic = np.identity(4)
+        scale_intrinsic[0, 0] = scale / ortho_ratio
+        scale_intrinsic[1, 1] = -scale / ortho_ratio
+        scale_intrinsic[2, 2] = scale / ortho_ratio
+        # Match image pixel space to image uv space
+        uv_intrinsic = np.identity(4)
+        uv_intrinsic[0, 0] = 1.0 / float(self.load_size // 2)
+        uv_intrinsic[1, 1] = 1.0 / float(self.load_size // 2)
+        uv_intrinsic[2, 2] = 1.0 / float(self.load_size // 2)
+        # Transform under image pixel space
+        trans_intrinsic = np.identity(4)
 
-            mask = Image.open(mask_path).convert('L')
-            render = Image.open(render_path).convert('RGB')
+        mask = Image.open(mask_path).convert('L')
+        render = Image.open(render_path).convert('RGB')
 
-            if self.is_train:
-                # Pad images
-                pad_size = int(0.1 * self.load_size)
-                render = ImageOps.expand(render, pad_size, fill=0)
-                mask = ImageOps.expand(mask, pad_size, fill=0)
+        if self.is_train:
+            # Pad images
+            pad_size = int(0.1 * self.load_size)
+            render = ImageOps.expand(render, pad_size, fill=0)
+            mask = ImageOps.expand(mask, pad_size, fill=0)
 
-                w, h = render.size
-                th, tw = self.load_size, self.load_size
+            w, h = render.size
+            th, tw = self.load_size, self.load_size
 
-                # random flip
-                if self.opt.random_flip and np.random.rand() > 0.5:
-                    scale_intrinsic[0, 0] *= -1
-                    render = transforms.RandomHorizontalFlip(p=1.0)(render)
-                    mask = transforms.RandomHorizontalFlip(p=1.0)(mask)
+            # random flip
+            if self.opt.random_flip and np.random.rand() > 0.5:
+                scale_intrinsic[0, 0] *= -1
+                render = transforms.RandomHorizontalFlip(p=1.0)(render)
+                mask = transforms.RandomHorizontalFlip(p=1.0)(mask)
 
-                # random scale
-                if self.opt.random_scale:
-                    rand_scale = random.uniform(0.9, 1.1)
-                    w = int(rand_scale * w)
-                    h = int(rand_scale * h)
-                    render = render.resize((w, h), Image.BILINEAR)
-                    mask = mask.resize((w, h), Image.NEAREST)
-                    scale_intrinsic *= rand_scale
-                    scale_intrinsic[3, 3] = 1
+            # random scale
+            if self.opt.random_scale:
+                rand_scale = random.uniform(0.9, 1.1)
+                w = int(rand_scale * w)
+                h = int(rand_scale * h)
+                render = render.resize((w, h), Image.BILINEAR)
+                mask = mask.resize((w, h), Image.NEAREST)
+                scale_intrinsic *= rand_scale
+                scale_intrinsic[3, 3] = 1
 
-                # random translate in the pixel space
-                if self.opt.random_trans:
-                    dx = random.randint(-int(round((w - tw) / 10.)),
-                                        int(round((w - tw) / 10.)))
-                    dy = random.randint(-int(round((h - th) / 10.)),
-                                        int(round((h - th) / 10.)))
-                else:
-                    dx = 0
-                    dy = 0
+            # random translate in the pixel space
+            if self.opt.random_trans:
+                dx = random.randint(-int(round((w - tw) / 10.)),
+                                    int(round((w - tw) / 10.)))
+                dy = random.randint(-int(round((h - th) / 10.)),
+                                    int(round((h - th) / 10.)))
+            else:
+                dx = 0
+                dy = 0
 
-                trans_intrinsic[0, 3] = -dx / float(self.load_size // 2)
-                trans_intrinsic[1, 3] = -dy / float(self.load_size // 2)
+            trans_intrinsic[0, 3] = -dx / float(self.load_size // 2)
+            trans_intrinsic[1, 3] = -dy / float(self.load_size // 2)
 
-                x1 = int(round((w - tw) / 2.)) + dx
-                y1 = int(round((h - th) / 2.)) + dy
+            x1 = int(round((w - tw) / 2.)) + dx
+            y1 = int(round((h - th) / 2.)) + dy
 
-                render = render.crop((x1, y1, x1 + tw, y1 + th))
-                mask = mask.crop((x1, y1, x1 + tw, y1 + th))
+            render = render.crop((x1, y1, x1 + tw, y1 + th))
+            mask = mask.crop((x1, y1, x1 + tw, y1 + th))
 
-                render = self.aug_trans(render)
+            render = self.aug_trans(render)
 
-                # random blur
-                if self.opt.aug_blur > 0.00001:
-                    blur = GaussianBlur(np.random.uniform(0, self.opt.aug_blur))
-                    render = render.filter(blur)
+            # random blur
+            if self.opt.aug_blur > 0.00001:
+                blur = GaussianBlur(np.random.uniform(0, self.opt.aug_blur))
+                render = render.filter(blur)
 
-            intrinsic = np.matmul(trans_intrinsic, np.matmul(uv_intrinsic, scale_intrinsic))
-            calib = torch.Tensor(np.matmul(intrinsic, extrinsic)).float()
-            extrinsic = torch.Tensor(extrinsic).float()
+        intrinsic = np.matmul(trans_intrinsic, np.matmul(uv_intrinsic, scale_intrinsic))
+        calib = torch.Tensor(np.matmul(intrinsic, extrinsic)).float()
+        extrinsic = torch.Tensor(extrinsic).float()
 
-            mask = transforms.Resize(self.load_size)(mask)
-            mask = transforms.ToTensor()(mask).float()
-            mask_list.append(mask)
+        mask = transforms.Resize(self.load_size)(mask)
+        mask = transforms.ToTensor()(mask).float()
+        mask_list.append(mask)
 
-            render = self.to_tensor(render)
-            render = mask.expand_as(render) * render
+        render = self.to_tensor(render)
+        render = mask.expand_as(render) * render
 
-            render_list.append(render)
-            calib_list.append(calib)
-            extrinsic_list.append(extrinsic)
+        render_list.append(render)
+        calib_list.append(calib)
+        extrinsic_list.append(extrinsic)
 
-            if self.opt.random_bg: # background에도 augmentation 추가하기
-                bg_path = os.path.join(self.BG, self.bg_img_list[np.random.randint(len(self.bg_img_list))])
-                bg = Image.open(bg_path).convert('RGB').resize((self.load_size, self.load_size), Image.NEAREST)
-                
-                bg_global = self.to_tensor_small(bg)
-                bg = self.to_tensor(bg)
-                
-                render_global = (1-mask_global).expand_as(render_global) * bg_global + render_global
-                render = (1-mask).expand_as(render) * bg + render
+        if self.opt.random_bg: # background에도 augmentation 추가하기
+            bg_path = os.path.join(self.BG, self.bg_img_list[np.random.randint(len(self.bg_img_list))])
+            bg = Image.open(bg_path).convert('RGB').resize((self.load_size, self.load_size), Image.NEAREST)
+            
+            bg_global = self.to_tensor_small(bg)
+            bg = self.to_tensor(bg)
+            
+            render_global = (1-mask_global).expand_as(render_global) * bg_global + render_global
+            render = (1-mask).expand_as(render) * bg + render
 
         return {
-            'img': torch.stack(render_list, dim=0),
-            'calib': torch.stack(calib_list, dim=0),
-            'extrinsic': torch.stack(extrinsic_list, dim=0),
-            'mask': torch.stack(mask_list, dim=0)
+            'img': torch.tensor(render_list[0]),
+            'calib': torch.tensor(calib_list[0]),
+            'extrinsic': torch.tensor(extrinsic_list[0]),
+            'mask': torch.tensor(mask_list[0])
         }
 
     def select_sampling_method(self, subject):
