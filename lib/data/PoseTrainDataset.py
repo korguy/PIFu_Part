@@ -354,8 +354,8 @@ class PoseTrainDataset(Dataset):
 
 #         save_samples_truncted_prob('./out.ply', samples.T, labels.T)
 #         exit()
-        save_samples_truncated_part('./part.ply', samples.T, parts.T)
-        exit()
+#         save_samples_truncated_part('./part.ply', samples.T, parts.T)
+#         exit()
 
         samples = torch.Tensor(samples).float()
         labels = torch.Tensor(labels).float()
