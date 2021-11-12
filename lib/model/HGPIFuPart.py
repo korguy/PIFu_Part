@@ -149,8 +149,10 @@ class HGPIFuPart(BasePIFuNet):
 		error['Err(part)'] = 0
 		for pred in self.intermediate_preds_list:
 			error['Err(occ)'] += self.criteria['occ'](pred, self.labels)
+		error['Err(occ)'] = error['Err(occ)'].sum(-1).mean()
 		for part in self.intermediate_parts_list[-1]:
 			error['Err(part)'] += self.criteria['part'](part, self.gt_parts) * 0.1
+		error['Err(part)'] = error['Err(part)'].sum(-1).mean()
 		return error
 
 
@@ -160,9 +162,12 @@ class HGPIFuPart(BasePIFuNet):
 	def get_error(self):
 		pass
 
-	def forward(self, images, points, calibs, lables, parts, gamma):
+	def forward(self, images, points, calibs, labels, parts, transforms=None, labels=None):
 		self.gt_parts = parts
+
 		self.filter(images)
+
+		self.query(points=points, calibs=calibs, transforms=transforms, labels=labels, parts=parts)
 
 		res = self.get_preds()
 		error = self.get_error()

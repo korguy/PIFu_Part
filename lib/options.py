@@ -20,10 +20,10 @@ class BaseOptions():
 		g_train.add_argument('--batch_size', type=int, default=4)
 		g_train.add_argument('--learning_rate', type=float, default=1e-3)
 		g_train.add_argument('--num_iter', type=int, default=50000)
-		g_train.add_argument('--freq_plot', type=int, default=100)
+		g_train.add_argument('--freq_plot', type=int, default=10)
 		g_train.add_argument('--freq_mesh', type=int, default=10000)
 		g_train.add_argument('--freq_eval', type=int, default=10000)
-		g_train.add_argument('--freq_save_ply', type=int, default=10000)
+		g_train.add_argument('--freq_save_ply', type=int, default=20000)
 		g_train.add_argument('--resume_epoch', type=int, default=-1)
 		g_train.add_argument('--continue_train', action='store_true')
 		g_train.add_argument('--serial_batches', action='store_true',
@@ -32,7 +32,7 @@ class BaseOptions():
 		g_train.add_argument('--pin_memory', action='store_true', help='pin_memory')
 
 		g_train.add_argument('--results_path', type=str, default="./runs")
-		g_train.add_argument('--num_parts', type=int, default=26)
+		g_train.add_argument('--num_parts', type=int, default=20)
 
 		g_train.add_argument('--bg_path', type=str, default='./val2017')
 
@@ -57,7 +57,7 @@ class BaseOptions():
 		g_model.add_argument('--hg_down', type=str, default='ave_pool')
 		g_model.add_argument('--hg_dim', type=int, default=256)
 
-		g_model.add_argument('--mlp_norm', type=str, default='batch')
+		g_model.add_argument('--mlp_norm', type=str, default=None)
 		g_model.add_argument('--mlp_dim', nargs='+', default=[257, 1024, 512, 256, 128, 1], type=int,
 			help='# of dimensions of mlp. no need to put the first channel')
 		g_model.add_argument('--mlp_dim_color', nargs='+', default=[1024, 512, 256, 128, 3], type=int,

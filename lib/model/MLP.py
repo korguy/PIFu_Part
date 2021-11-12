@@ -77,13 +77,14 @@ class MLP(nn.Module):
                 else torch.cat([y, tmpy], 1)
             )
             if i != len(self.filters)-1:
-                y = F.leaky_relu(self.norms[i](y))         
+                y = F.leaky_relu(y)         
             if i == self.merge_layer:
                 phi = y.clone()
 
         # if self.last_op is not None:
         #     y = self.last_op(y)
 
-        y *= parts_softmax.view(y.shape[0], y.shape[1], -1)
+        y *= parts_softmax
+        y = y.mean(1)
 
         return y, out_parts
