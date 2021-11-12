@@ -11,8 +11,9 @@ class BaseOptions():
 		parser.add_argument('--name', type=str, default='ptf_pifu')
 
 		g_data = parser.add_argument_group('Data')
-		g_data.add_argument('--dataroot', type=str, default='./data')
-		g_data.add_argument('--loadSize', type=int, default=512)
+		g_data.add_argument('--dataroot', type=str, default='./training_data')
+		g_data.add_argument('--loadSizeSmall', type=int, default=512)
+		g_data.add_argument('--loadSizeBig', type=int, default=1024)
 
 		g_train = parser.add_argument_group('Training')
 		g_train.add_argument('--gpu_id', type=int, default=0)
@@ -32,6 +33,9 @@ class BaseOptions():
 
 		g_train.add_argument('--results_path', type=str, default="./runs")
 		g_train.add_argument('--num_parts', type=int, default=26)
+		g_train.add_argument('--random_bg', type=bool, default=True)
+
+		g_train.add_argument('--bg_path', type=str, default='./val2017')
 
 
 		g_test = parser.add_argument_group('Testing')

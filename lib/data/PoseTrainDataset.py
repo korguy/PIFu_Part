@@ -19,7 +19,7 @@ def load_trimesh(root_dir):
     meshs = {}
     for i, f in enumerate(folders):
         sub_name = f
-        meshs[sub_name] = trimesh.load(os.path.join(root_dir, f, '%s_100k.obj' % sub_name))
+        meshs[sub_name] = trimesh.load(os.path.join(root_dir, f, '%s_posed.obj' % sub_name))
         #### mesh = trimesh.load("alvin_t_posed.obj",process=False, maintain_order=True, skip_uv=True)
 
     return meshs
@@ -70,11 +70,17 @@ class TrainDataset(Dataset):
         self.UV_POS = os.path.join(self.root, 'UV_POS')
         self.OBJ = os.path.join(self.root, 'GEO', 'OBJ')
 
+        self.BG = self.opt.bg_path
+        self.bg_img_list = []
+        if self.opt.random_bg:
+            bg_img_list = [os.path.join(self.BG, img_path) for img_path in os.listdir(self.BG) if (img_path.endswith('png') or img_path.endswith('jpg'))]
+            self.bg_img_list.sort()
+
         self.B_MIN = np.array([-128, -28, -128]) / 128
         self.B_MAX = np.array([128, 228, 128]) / 128
 
         self.is_train = (phase == 'train')
-        self.load_size = self.opt.loadSize
+        self.load_size = self.opt.loadSizeSmall
 
         self.num_sample_inout = self.opt.num_sample_inout
         self.num_sample_color = self.opt.num_sample_color
@@ -238,6 +244,16 @@ class TrainDataset(Dataset):
             calib_list.append(calib)
             extrinsic_list.append(extrinsic)
 
+            if self.opt.random_bg: # background에도 augmentation 추가하기
+                bg_path = os.path.join(self.BG, self.bg_img_list[np.random.randint(len(self.bg_img_list))])
+                bg = Image.open(bg_path).convert('RGB').resize((self.load_size, self.load_size), Image.NEAREST)
+                
+                bg_global = self.to_tensor_small(bg)
+                bg = self.to_tensor(bg)
+                
+                render_global = (1-mask_global).expand_as(render_global) * bg_global + render_global
+                render = (1-mask).expand_as(render) * bg + render
+
         return {
             'img': torch.stack(render_list, dim=0),
             'calib': torch.stack(calib_list, dim=0),
@@ -247,12 +263,12 @@ class TrainDataset(Dataset):
 
     def select_sampling_method(self, subject):
         if not self.is_train:
-            random.seed(1991)
-            np.random.seed(1991)
-            torch.manual_seed(1991)
+            random.seed(1997)
+            np.random.seed(1997)
+            torch.manual_seed(1997)
         mesh = self.mesh_dic[subject]
         surface_points, surface_points_face_indices = trimesh.sample.sample_surface(mesh, 4 * self.num_sample_inout)
-        sample_points = surface_points + np.random.normal(scale=self.opt.sigma, size=surface_points.shape)
+        sample_points = surface_points + np.random.normal(scale=(self.opt.sigma / 128.), size=surface_points.shape)
         
         body_parts = [ 'head', 'neck','spine', 'hip', 
                        'shoulder_l', 'upperarm_l', 'lowerarm_l', 'hand_l', 'finger_l',
@@ -263,7 +279,7 @@ class TrainDataset(Dataset):
         # one-hot vectors of the sampled points
         surface_points_body_parts = []
         
-        with open("foo.json") as f: 
+        with open(os.path.join(self.PART, subject, "%s.json" % subject)) as f: 
             json_data = json.load(f)
         
         surface_points_faces = mesh.faces[surface_points_face_indices]
