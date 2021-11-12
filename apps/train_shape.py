@@ -27,10 +27,10 @@ writer = SummaryWriter(summary_path)
 def train(opt):
 	cuda = torch.device(f'cuda:{opt.gpu_id}')
 
-# 	train_dataset = TrainDataset(opt)
-# 	test_dataset = EvalDataset(opt)
+	train_dataset = PoseTrainDataset(opt, phase='train')
+	test_dataset = PoseTrainDataset(opt, phase='eval')
 
-# 	projection_mode = train_dataset.projection_mode
+	projection_mode = train_dataset.projection_mode
 
 # 	train_data_loader = DataLoader(train_dataset,
 # 									batch_size=opt.batch_size, shuffle=not opt.serial_batches,
