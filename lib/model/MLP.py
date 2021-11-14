@@ -70,9 +70,10 @@ class MLP(nn.Module):
         net_parts = F.leaky_relu(self.fc_parts_0(feature))
         net_parts = F.leaky_relu(self.fc_parts_1(net_parts))
         out_parts = self.fc_parts_out(net_parts)
-        print("out_parts:",out_parts.shape)
+#         print("shape in mlp", out_parts.shape)
 
         parts_softmax = self.fc_parts_softmax(out_parts)
+#         print("out_parts:",parts_softmax[0, :, 0])
 
         for i, f in enumerate(self.filters):
             y = f(
@@ -83,10 +84,11 @@ class MLP(nn.Module):
                 y = F.leaky_relu(y)         
             if i == self.merge_layer:
                 phi = y.clone()
-        print("y shape(before):", y.shape)
+#         print("y (before):", y[0, :, 0])
         y *= parts_softmax
         y = y.mean(1)
-        print("y shape(after):", y.shape)
+        y = y.view(y.shape[0], 1, y.shape[1])
+#         print("y shape(after):", y.shape)
         
         if self.last_op is not None:
             y = self.last_op(y)

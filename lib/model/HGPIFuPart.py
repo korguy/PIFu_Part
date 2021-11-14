@@ -128,14 +128,22 @@ class HGPIFuPart(BasePIFuNet):
 
         if labels is not None:
             self.lables = in_bb * labels
-        print("im_feat:", len(self.im_feat_list))
-
+        
         sp_feat = self.spatial_enc(xyz, calibs=calibs)
+        
+        ## debugging
+#         for i in self.im_feat_list:
+#             print(i.shape)
+#         print("sp_feat: ", sp_feat[:,:,:10])
 
         for i, im_feat in enumerate(self.im_feat_list):
+#             print(self.index(im_feat,xy).shape)
+#             print(sp_feat.shape)
             point_local_feat_list = [self.index(im_feat, xy), sp_feat]
             point_local_feat = torch.cat(point_local_feat_list, 1)
+#             print(point_local_feat.shape)
             pred, part = self.mlp(point_local_feat)
+#             print("part shape in main", part.shape)
             pred = in_bb * pred
 
             self.intermediate_parts_list.append(part)
@@ -150,11 +158,10 @@ class HGPIFuPart(BasePIFuNet):
         error['Err(part)'] = 0
         for pred in self.intermediate_preds_list:
             error['Err(occ)'] += self.criteria['occ'](pred, self.labels)
-        error['Err(occ)'] = error['Err(occ)'].sum(-1).mean()
-        for part in self.intermediate_parts_list[-1]:
-            print(part.shape)
-            error['Err(part)'] += self.criteria['part'](part, self.gt_parts) * 0.1
-        error['Err(part)'] = error['Err(part)'].sum(-1).mean()
+        error['Err(occ)'] /= len(self.intermediate_preds_list)
+        for part in self.intermediate_parts_list:
+            error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long()) * 0.1
+        error['Err(part)'] /= len(self.intermediate_parts_list)
         return error
 
 
@@ -163,7 +170,7 @@ class HGPIFuPart(BasePIFuNet):
 
 
     def forward(self, images, points, calibs, labels, parts, transforms=None):
-        self.gt_parts = parts
+        self.gt_parts = parts.argmax(1)
         self.labels = labels
 
         self.filter(images)
