@@ -114,7 +114,7 @@ class PoseTrainDataset(Dataset):
         self.BG = self.opt.bg_path
         self.bg_img_list = []
         if self.opt.random_bg:
-            bg_img_list = [os.path.join(self.BG, img_path) for img_path in os.listdir(self.BG) if (img_path.endswith('png') or img_path.endswith('jpg'))]
+            self.bg_img_list = [os.path.join(self.BG, x) for x in os.listdir(self.BG)]
             self.bg_img_list.sort()
 
         self.B_MIN = np.array([-128, -28, -128]) / 128
@@ -288,13 +288,11 @@ class PoseTrainDataset(Dataset):
         extrinsic_list.append(extrinsic)
 
         if self.opt.random_bg: # background에도 augmentation 추가하기
-            bg_path = os.path.join(self.BG, self.bg_img_list[np.random.randint(len(self.bg_img_list))])
+            bg_path = self.bg_img_list[np.random.randint(len(self.bg_img_list))]
             bg = Image.open(bg_path).convert('RGB').resize((self.load_size, self.load_size), Image.NEAREST)
             
-            bg_global = self.to_tensor_small(bg)
             bg = self.to_tensor(bg)
             
-            render_global = (1-mask_global).expand_as(render_global) * bg_global + render_global
             render = (1-mask).expand_as(render) * bg + render
 
         return {
@@ -378,7 +376,7 @@ class PoseTrainDataset(Dataset):
 
 #         save_samples_truncted_prob('./out.ply', samples.T, labels.T)
 #         exit()
-        save_samples_truncated_part('./part.ply', samples.T, parts.T)
+#         save_samples_truncated_part('./part.ply', samples.T, parts.T)
 #         exit()
 
         samples = torch.Tensor(samples).float()

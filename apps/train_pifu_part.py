@@ -45,13 +45,6 @@ def train(opt):
 									batch_size=1, shuffle=True,
 									num_workers=opt.num_threads, pin_memory=opt.pin_memory)
 	print('test data size: ', len(test_data_loader))
-	
-	for tmp in test_data_loader:
-		for key in tmp.keys():
-			try:
-				print(key, tmp[key].shape)
-			except:
-				print(key, tmp[key])
 
 	net = HGPIFuPart(opt, "orthogonal").to(device=cuda)
 	print("Using Network: ", net.name)
@@ -59,10 +52,10 @@ def train(opt):
 
 	if opt.resume_epoch != -1:
 		print(f"resuming from epoch {opt.resume_epoch}")
-		net.load_state_dict(torch.load(os.path.join(opt.checkpoints_path,
+		net.load_state_dict(torch.load(os.path.join(opt.load_checkpoints_path,
 													opt.name,
 													f"net_epoch_{opt.resume_epoch}")))
-	optimzer = torch.optim.RMSprop(net.parameters(), lr=opt.learning_rate)
+	optimizer = torch.optim.RMSprop(net.parameters(), lr=opt.learning_rate)
 	scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 	for _ in range(opt.resume_epoch):
 		scheduler.step()
@@ -73,9 +66,9 @@ def train(opt):
 	def set_eval():
 		net.eval()
 
-	os.makedirs(opt.checkpoints_path, exist_ok=True)
+	os.makedirs(opt.load_checkpoints_path, exist_ok=True)
 	os.makedirs(opt.results_path, exist_ok=True)
-	os.makedirs(os.path.join(opt.checkpoints_path, opt.name), exist_ok=True)
+	os.makedirs(os.path.join(opt.load_checkpoints_path, opt.name), exist_ok=True)
 	os.makedirs(os.path.join(opt.results_path, opt.name), exist_ok=True)
 
 	start_epoch = 0 if opt.resume_epoch == -1 else max(opt.resume_epoch, 0)
@@ -96,10 +89,10 @@ def train(opt):
 
 			res, error = net.forward(img_tensor, samples_tensor, calib_tensor, labels_tensor, parts_tensor)
 
-			optimzer.zero_grad()
+			optimizer.zero_grad()
 			error = sum_dict(error)
 			error.backward()
-			optimzer.step()
+			optimizer.step()
 
 			if train_idx % opt.freq_plot == 0:
 				print(
@@ -113,7 +106,7 @@ def train(opt):
 			if train_idx % opt.freq_eval == 0:
 				print("Evaluating...")
 				set_eval()
-				err_arr, , IOU_arr, prec_arr, recall_arr = [], [], [], []
+				err_arr , IOU_arr, prec_arr, recall_arr = [], [], [], []
 				for idx, test_data in enumerate(test_data_loader):
 					img_tensor = test_data['img'].to(device=cuda)
 					calib_tensor = test_data['calib'].to(device=cuda)

@@ -15,6 +15,6 @@ class DepthNormalizer(nn.Module):
         args:
             xyz: [B, 3, N] depth value
         '''
-        z_feat = xyz[:,2:3,:] * (self.opt.loadSize // 2) / self.opt.z_size
+        z_feat = xyz[:,2:3,:] * (self.opt.loadSizeSmall // 2) / self.opt.z_size
 
         return z_feat
