@@ -332,8 +332,8 @@ class PoseTrainDataset(Dataset):
         ref = max([int(x) for x in json_data.keys()])
    
         for idx_num in surface_points_vertices_indices:
-            if idx > ref:
-                idx = ref
+            if idx_num > ref:
+                idx_num = ref
             idx = str(idx_num)
             temp = [0 for i in range(20)]
             temp[ body_parts.index(json_data[idx]) ] = 1 # one-hot vector making
