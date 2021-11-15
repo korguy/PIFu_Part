@@ -331,10 +331,14 @@ class PoseTrainDataset(Dataset):
         
    
         for idx_num in surface_points_vertices_indices:
-            idx = str(idx_num)
-            temp = [0 for i in range(20)]
-            temp[ body_parts.index(json_data[idx]) ] = 1 # one-hot vector making
-            surface_points_body_parts.append(temp)
+	    try:
+                idx = str(idx_num)
+                temp = [0 for i in range(20)]
+                temp[ body_parts.index(json_data[idx]) ] = 1 # one-hot vector making
+                surface_points_body_parts.append(temp)
+	    except:
+		print(subject)
+		print(ref, idx)
             
         # add random points within image space
         length = self.B_MAX - self.B_MIN
