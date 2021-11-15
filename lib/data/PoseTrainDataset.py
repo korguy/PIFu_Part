@@ -27,7 +27,7 @@ def get_part(file, vertices, points, body_parts):
             dist = get_dist(point, vertice)
             if _min > dist:
                 _min = dist
-                _idx = idx*5
+                _idx = idx
         tmp = [0 for i in range(20)]
         tmp[ body_parts.index(file[str(_idx)]) ] = 1 # one-hot vector making
         part.append(tmp)

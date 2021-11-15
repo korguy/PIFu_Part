@@ -22,14 +22,14 @@ def get_part(file, vertices, points, body_parts):
     part = []
     for point in points:
         _min = float('inf')
-        _idx = 1
+        _idx = 0
         for idx, vertice in enumerate(vertices[::5]):
             dist = get_dist(point, vertice)
             if _min > dist:
                 _min = dist
-                _idx = (idx*5)+1
+                _idx = idx*5
         tmp = [0 for i in range(20)]
-        tmp[ body_parts.index(file[str(_idx+1)]) ] = 1 # one-hot vector making
+        tmp[ body_parts.index(file[str(_idx)]) ] = 1 # one-hot vector making
         part.append(tmp)
     part = np.array(part)
     return part
@@ -146,6 +146,7 @@ class PTFTrainDataset(Dataset):
         ])
 
         self.mesh_dic = load_trimesh(self.OBJ)
+        self.t_mesh_dic = load_trimesh(self.T_OBJ)
 
     def get_subjects(self):
         all_subjects = os.listdir(self.RENDER)
@@ -309,6 +310,8 @@ class PTFTrainDataset(Dataset):
             np.random.seed(1997)
             torch.manual_seed(1997)
         mesh = self.mesh_dic[subject]
+        t_mesh = self.t_mesh_dic[subject]
+        
         surface_points, surface_points_face_indices = trimesh.sample.sample_surface(mesh, 4 * self.num_sample_inout)
         sample_points = surface_points + np.random.normal(scale=(self.opt.sigma / 128.), size=surface_points.shape)
         
@@ -393,7 +396,8 @@ class PTFTrainDataset(Dataset):
         return {
             'samples': samples,
             'labels': labels,
-            'parts': parts
+            'parts': parts,
+            'correspondences': correspondences
         }
 
 
