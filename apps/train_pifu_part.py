@@ -31,7 +31,7 @@ def sum_dict(los):
     return temp
 
 def train(opt):
-    cuda = torch.device(f'cuda:{opt.gpu_id}')
+    cuda = torch.device(f'cuda')
 
     train_dataset = PoseTrainDataset(opt, phase='train')
     test_dataset = PoseTrainDataset(opt, phase='eval')
