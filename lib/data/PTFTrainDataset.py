@@ -16,7 +16,7 @@ import datetime
 log = logging.getLogger('trimesh')
 log.setLevel(40)
 
-def get_part(file, vertices, points, body_parts):
+def get_part_and_correspondences(file, vertices, points, body_parts):
     def get_dist(pt1, pt2):
         return sqrt((pt1[0]-pt2[0])**2 +(pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
     part = []
@@ -27,7 +27,7 @@ def get_part(file, vertices, points, body_parts):
             dist = get_dist(point, vertice)
             if _min > dist:
                 _min = dist
-                _idx = idx*5
+                _idx = idx
         tmp = [0 for i in range(20)]
         tmp[ body_parts.index(file[str(_idx)]) ] = 1 # one-hot vector making
         part.append(tmp)
@@ -311,7 +311,7 @@ class PTFTrainDataset(Dataset):
             torch.manual_seed(1997)
         mesh = self.mesh_dic[subject]
         t_mesh = self.t_mesh_dic[subject]
-        
+
         surface_points, surface_points_face_indices = trimesh.sample.sample_surface(mesh, 4 * self.num_sample_inout)
         sample_points = surface_points + np.random.normal(scale=(self.opt.sigma / 128.), size=surface_points.shape)
         
@@ -333,11 +333,11 @@ class PTFTrainDataset(Dataset):
         for single_face in surface_points_faces:
             surface_points_vertices_indices.append(min(single_face)) # take the first vertex of the face as a representative
         
-        ref = max([int(x) for x in json_data.keys()])
+        ## get correspondences
+        surface_points_correspondences = []
+        
    
         for idx_num in surface_points_vertices_indices:
-            if idx_num > ref:
-                idx_num = ref
             idx = str(idx_num)
             temp = [0 for i in range(20)]
             temp[ body_parts.index(json_data[idx]) ] = 1 # one-hot vector making
