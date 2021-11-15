@@ -22,14 +22,14 @@ def get_part(file, vertices, points, body_parts):
     part = []
     for point in points:
         _min = float('inf')
-        _idx = 1
+        _idx = 0
         for idx, vertice in enumerate(vertices[::5]):
             dist = get_dist(point, vertice)
             if _min > dist:
                 _min = dist
-                _idx = (idx*5)+1
+                _idx = idx*5
         tmp = [0 for i in range(20)]
-        tmp[ body_parts.index(file[str(_idx+1)]) ] = 1 # one-hot vector making
+        tmp[ body_parts.index(file[str(_idx)]) ] = 1 # one-hot vector making
         part.append(tmp)
     part = np.array(part)
     return part
