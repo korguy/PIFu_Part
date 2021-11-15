@@ -40,9 +40,7 @@ class BasePIFuNet(nn.Module):
         return:
             [B, C, N] prediction corresponding to the given points
         '''
-        self.filter(images)
-        self.query(points, calibs, transforms)
-        return self.get_preds()
+        None
 
     def filter(self, images):
         '''

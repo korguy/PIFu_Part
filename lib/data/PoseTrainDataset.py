@@ -322,14 +322,18 @@ class PoseTrainDataset(Dataset):
         
         with open(os.path.join(self.PART, subject, "%s_part.json" % subject.split('_')[0])) as f: 
             json_data = json.load(f)
-        
+        ref = max([int(x) for x in json_data.keys()])
         surface_points_faces = mesh.faces[surface_points_face_indices]
         surface_points_vertices_indices = []
         
         for single_face in surface_points_faces:
             surface_points_vertices_indices.append(min(single_face)) # take the first vertex of the face as a representative
         
+        ref = max([int(x) for x in json_data.keys()])
+   
         for idx_num in surface_points_vertices_indices:
+            if idx > ref:
+                idx = ref
             idx = str(idx_num)
             temp = [0 for i in range(20)]
             temp[ body_parts.index(json_data[idx]) ] = 1 # one-hot vector making
