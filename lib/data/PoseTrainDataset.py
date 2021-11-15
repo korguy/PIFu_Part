@@ -327,7 +327,7 @@ class PoseTrainDataset(Dataset):
         surface_points_vertices_indices = []
         
         for single_face in surface_points_faces:
-            surface_points_vertices_indices.append(single_face[0]) # take the first vertex of the face as a representative
+            surface_points_vertices_indices.append(min(single_face)) # take the first vertex of the face as a representative
         
         for idx_num in surface_points_vertices_indices:
             idx = str(idx_num)
