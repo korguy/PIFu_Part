@@ -155,11 +155,10 @@ class HGPIFuPart(BasePIFuNet):
         error['Err(occ)'] /= len(self.intermediate_preds_list)
 
         for part in self.intermediate_parts_list:
-            tmp = F.cross_entropy(part, self.gt_parts.long(), reduction='none') * 0.1
-            tmp = tmp.sum(-1).mean()
+            tmp = F.cross_entropy(part, self.gt_parts.long()) * 0.1
             error['Err(part)'] += tmp
         error['Err(part)'] /= len(self.intermediate_parts_list)
-
+        
         return error
 
     def get_part(self):

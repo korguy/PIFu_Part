@@ -46,11 +46,6 @@ class MLP_PART(nn.Module):
                         filter_channels[l]* num_parts,
                         filter_channels[l+1] * num_parts,
                         1, groups=num_parts))
-#             if l != len(filter_channels)-2:
-#                 if norm == 'group':
-#                     self.norms.append(nn.GroupNorm(32, filter_channels[l+1]))
-#                 elif norm == 'batch':
-#                     self.norms.append(nn.BatchNorm1d(filter_channels[l+1]))
 
     def forward(self, feature):
         '''
@@ -65,8 +60,8 @@ class MLP_PART(nn.Module):
         phi = None
 
         # part
-        net_parts = F.ReLU(self.fc_parts_0(feature))
-        net_parts = F.ReLU(self.fc_parts_1(net_parts))
+        net_parts = F.relu(self.fc_parts_0(feature))
+        net_parts = F.relu(self.fc_parts_1(net_parts))
         out_parts = self.fc_parts_out(net_parts)
 
         parts_softmax = self.fc_parts_softmax(out_parts)
@@ -80,7 +75,7 @@ class MLP_PART(nn.Module):
                 y = F.leaky_relu(y)         
             if i == self.merge_layer:
                 phi = y.clone()
-                
+
         y *= parts_softmax
         y = y.mean(1)
         y = y.view(y.shape[0], 1, y.shape[1])
