@@ -26,7 +26,7 @@ class MLP_PART(nn.Module):
         self.part_2 = nn.Conv1d(256 * num_parts, 256 * num_parts, 1, groups=num_parts)
         self.part_out = nn.Conv1d(256 * num_parts, num_parts, 1, groups=num_parts)
 
-        self.actvn = nn.ReLu()
+        self.actvn = nn.ReLU()
 
 
     def forward(self, feature):
