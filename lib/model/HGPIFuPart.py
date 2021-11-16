@@ -155,11 +155,11 @@ class HGPIFuPart(BasePIFuNet):
         error['Err(part)'] = 0.0
 
         for pred in self.intermediate_preds_list: 
-            error['Err(occ)'] += self.criteria['occ'](pred, self.labels.view(pred.shape[0], pred.shape[1]))
+            error['Err(occ)'] += self.criteria['occ'](pred, self.labels)
         error['Err(occ)'] /= len(self.intermediate_preds_list)
 
         for part in self.intermediate_parts_list:
-            error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long()) * 0.1
+            error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long()) * 0.01
         error['Err(part)'] /= len(self.intermediate_parts_list)
 
         return error
