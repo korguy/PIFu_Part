@@ -134,8 +134,9 @@ def train(opt):
 
             iter_data_time = time.time()
 
-            if train_idx % 5000 == 0 and train_idx != 0:
-                break
+            if train_idx % opt.save_model == 0 and train_idx != 0:
+                torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, 'net_latest'))
+                torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, f'net_epoch_{epoch}'))
 
             if train_idx % opt.freq_save_ply == 0 and train_idx != 0:
                 save_path = os.path.join(opt.results_path, opt.name, f'pred_{epoch}_{train_idx}.ply')

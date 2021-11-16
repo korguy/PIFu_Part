@@ -27,6 +27,7 @@ class BaseOptions():
         g_train.add_argument('--resume_epoch', type=int, default=-1)
         g_train.add_argument('--num_epoch', type=int, default=20)
         g_train.add_argument('--continue_train', action='store_true')
+        g_train.add_argument('--save_model', type=int, default=1000)
         g_train.add_argument('--serial_batches', action='store_true',
                                 help='if true, takes images in order to make batches, otherwise takes them randomly')
         g_train.add_argument('--num_threads', default=1, type=int, help='# sthreads for loading data')
