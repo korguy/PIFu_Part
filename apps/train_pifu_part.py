@@ -89,8 +89,6 @@ def train(opt):
 
             res, _error, part = net.forward(img_tensor, samples_tensor, calib_tensor, labels_tensor, parts_tensor)
 
-            print(part.shape)
-
             optimizer.zero_grad()
             error = sum_dict(_error)
             error.backward()
