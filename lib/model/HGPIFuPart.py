@@ -159,7 +159,7 @@ class HGPIFuPart(BasePIFuNet):
         error['Err(occ)'] /= len(self.intermediate_preds_list)
 
         for part in self.intermediate_parts_list:
-            error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long()) * 0.01
+            error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long()) * 0.1
         error['Err(part)'] /= len(self.intermediate_parts_list)
 
         return error
