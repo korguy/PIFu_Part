@@ -140,7 +140,7 @@ def train(opt):
                 break
 
             if train_idx % 100 == 0 and train_idx != 0:
-                save_path = os.path.join(opt.results_path, opt.name, epoch, f'pred{epoch}.ply')
+                save_path = os.path.join(opt.results_path, opt.name, f'pred{epoch}.ply')
                 r = res[0].cpu()
                 points = samples_tensor[0].transpose(0, 1).cpu()
                 save_samples_truncated_part("./part.ply", points.detach().numpy(), part[0].cpu().numpy())
