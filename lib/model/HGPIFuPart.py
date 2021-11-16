@@ -128,6 +128,9 @@ class HGPIFuPart(BasePIFuNet):
 
         if labels is not None:
             self.lables = in_bb * labels
+
+        self.intermediate_parts_list = []
+        self.intermediate_preds_list = []       
         
         sp_feat = self.spatial_enc(xyz, calibs=calibs)
         
@@ -154,14 +157,17 @@ class HGPIFuPart(BasePIFuNet):
 
     def get_error(self):
         error = {}
-        error['Err(occ)'] = 0
-        error['Err(part)'] = 0
+        error['Err(occ)'] = 0.0
+        error['Err(part)'] = 0.0
+
         for pred in self.intermediate_preds_list:
             error['Err(occ)'] += self.criteria['occ'](pred, self.labels)
         error['Err(occ)'] /= len(self.intermediate_preds_list)
+
         for part in self.intermediate_parts_list:
             error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long()) * 0.1
         error['Err(part)'] /= len(self.intermediate_parts_list)
+
         return error
 
 
