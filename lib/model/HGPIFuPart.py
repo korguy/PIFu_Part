@@ -161,6 +161,8 @@ class HGPIFuPart(BasePIFuNet):
 
         return error
 
+    def get_part(self):
+        return self.parts
 
     def get_im_feat(self):
         return self.im_feat_list[-1]

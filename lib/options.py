@@ -22,7 +22,7 @@ class BaseOptions():
         g_train.add_argument('--num_iter', type=int, default=50000)
         g_train.add_argument('--freq_plot', type=int, default=10)
         g_train.add_argument('--freq_mesh', type=int, default=10000)
-        g_train.add_argument('--freq_eval', type=int, default=10000)
+        g_train.add_argument('--freq_eval', type=int, default=1000)
         g_train.add_argument('--freq_save_ply', type=int, default=20000)
         g_train.add_argument('--resume_epoch', type=int, default=-1)
         g_train.add_argument('--num_epoch', type=int, default=20)

@@ -89,6 +89,8 @@ def train(opt):
 
             res, _error = net.forward(img_tensor, samples_tensor, calib_tensor, labels_tensor, parts_tensor)
 
+            part = net.get_part()
+
             optimizer.zero_grad()
             error = sum_dict(_error)
             error.backward()
@@ -113,6 +115,8 @@ def train(opt):
                         samples_tensor = test_data['samples'].to(device=cuda)
                         parts_tensor = test_data['parts'].to(device=cuda)
 
+                        labels_tensor = test_data['labels'].to(device=cuda)
+
                         res_eval, eval_err = net.forward(img_tensor, samples_tensor, calib_tensor, labels_tensor, parts_tensor)
 
                         IOU, prec, recall = compute_acc(res_eval, labels_tensor)
@@ -132,9 +136,13 @@ def train(opt):
 
             iter_data_time = time.time()
 
+            if train_idx % 5000 == 0 and train_idx != 0:
+                break
+
         save_path = os.path.join(opt.results_path, opt.name, epoch, f'pred{epoch}.ply')
         r = res[0].cpu()
         points = samples_tensor[0].transpose(0, 1).cpu()
+        save_samples_truncated_part("./part.ply", points.detach().numpy(), part[0].cpu().numpy())
         save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
         torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, 'net_latest'))
         torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, f'net_epoch_{epoch}'))
