@@ -110,6 +110,7 @@ class PoseTrainDataset(Dataset):
 		self.UV_RENDER = os.path.join(self.root, 'UV_RENDER')
 		self.UV_POS = os.path.join(self.root, 'UV_POS')
 		self.OBJ = os.path.join(self.root, 'GEO', 'OBJ')
+		self.CACHE = os.path.join(self.root, 'CACHE')
 
 		self.BG = self.opt.bg_path
 		self.bg_img_list = []
@@ -307,6 +308,21 @@ class PoseTrainDataset(Dataset):
 			random.seed(1997)
 			np.random.seed(1997)
 			torch.manual_seed(1997)
+
+		if os.path.exists(os.path.join(self.CACHE, subject)):
+			samples = np.load(os.path.join(self.CACHE, subject, "samples.npy"))
+			labels = np.load(os.path.join(self.CACHE, subject, "labels.npy"))
+			parts = np.load(os.path.join(self.CACHE, subject, "parts.npy"))
+			samples = torch.Tensor(samples).float()
+			labels = torch.Tensor(labels).float()
+			parts = torch.Tensor(parts).float()
+
+			return {
+				'samples': samples,
+				'labels': labels,
+				'parts': parts
+			}
+
 		mesh = self.mesh_dic[subject]
 		surface_points, surface_points_face_indices = trimesh.sample.sample_surface(mesh, 4 * self.num_sample_inout)
 		sample_points = surface_points + np.random.normal(scale=(self.opt.sigma / 128.), size=surface_points.shape)
@@ -331,14 +347,10 @@ class PoseTrainDataset(Dataset):
 		
    
 		for idx_num in surface_points_vertices_indices:
-			try:
-				idx = str(idx_num)
-				temp = [0 for i in range(20)]
-				temp[ body_parts.index(json_data[idx]) ] = 1 # one-hot vector making
-				surface_points_body_parts.append(temp)
-			except:
-				print(subject)
-				print(ref, idx)
+			idx = str(idx_num)
+			temp = [0 for i in range(20)]
+			temp[ body_parts.index(json_data[idx]) ] = 1 # one-hot vector making
+			surface_points_body_parts.append(temp)
 			
 		# add random points within image space
 		length = self.B_MAX - self.B_MIN
@@ -378,6 +390,12 @@ class PoseTrainDataset(Dataset):
 		samples = np.concatenate([inside_points, outside_points], 0).T
 		labels = np.concatenate([np.ones((1, inside_points.shape[0])), np.zeros((1, outside_points.shape[0]))], 1)
 		parts = np.concatenate([inside_parts, outside_parts], 0).T
+
+		os.makedirs(os.path.join(self.CACHE, subject), exist_ok=True)
+
+		np.save(os.path.join(self.CACHE, subject, "samples.npy"), samples)
+		np.save(os.path.join(self.CACHE, subject, "labels.npy"), labels)
+		np.save(os.path.join(self.CACHE, subject, "parts.npy"), parts)
 
 #         save_samples_truncted_prob('./out.ply', samples.T, labels.T)
 #         exit()

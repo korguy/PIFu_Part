@@ -395,6 +395,7 @@ class PTFTrainDataset(Dataset):
         parts = torch.Tensor(parts).float()
         
         del mesh
+        del t_mesh
 
         return {
             'samples': samples,
