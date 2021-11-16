@@ -75,8 +75,8 @@ def train(opt):
     for epoch in range(start_epoch, opt.num_epoch):
         epoch_start_time = time.time()
         iter_data_time = time.time()
+        set_train()
         for train_idx, train_data in enumerate(train_data_loader):
-            set_train()
             iter_start_time = time.time()
 
             # retrieve data
@@ -128,6 +128,7 @@ def train(opt):
                     writer.add_scalar('test IOU', eval_errors[1], epoch * len(train_data_loader) + train_idx)
                     writer.add_scalar('test precision', eval_errors[2], epoch * len(train_data_loader) + train_idx)
                     writer.add_scalar('test recall', eval_errors[3], epoch * len(train_data_loader) + train_idx) 
+                set_train()
 
             iter_data_time = time.time()
 

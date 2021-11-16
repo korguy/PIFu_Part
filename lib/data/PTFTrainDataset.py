@@ -329,6 +329,9 @@ class PTFTrainDataset(Dataset):
         
         surface_points_faces = mesh.faces[surface_points_face_indices]
         surface_points_vertices_indices = []
+
+        correspondences = []
+        get_correspondences(surface_points, surface_points_faces, )
         
         for single_face in surface_points_faces:
             surface_points_vertices_indices.append(min(single_face))
