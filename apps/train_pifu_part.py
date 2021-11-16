@@ -98,7 +98,7 @@ def train(opt):
 
             if train_idx % opt.freq_plot == 0:
                 print(
-                    f"Name: {opt.name} | Epoch: {epoch} | {train_idx}/{len(train_data_loader)} | Error: {error.item():.06f} | LR: {scheduler.get_last_lr()[0]:.05f} | Sigma: {opt.sigma:.02f}")
+                    f"Name: {opt.name} | Epoch: {epoch} | {train_idx}/{len(train_data_loader)} | Error['part']: {_error['Err(part)'].item():.06f} | Error['occ']: {_error['Err(occ)'].item():.06f} | LR: {scheduler.get_last_lr()[0]:.05f} | Sigma: {opt.sigma:.02f}")
                 writer.add_scalar('training loss',
                                     error.item(),
                                     epoch * len(train_data_loader) + train_idx)
