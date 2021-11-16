@@ -146,7 +146,7 @@ def train(opt):
                 r = res[0].cpu()
                 points = samples_tensor[0].transpose(0, 1).cpu()
                 save_samples_truncated_prob(save_path3, points.detach().numpy(), labels_tensor[0].cpu().detach().numpy())
-                save_samples_truncated_part(save_path4, points.detach().numpy(), parts_tensor[0].cpu().detach().numpy())
+                save_samples_truncated_part(save_path4, points.detach().numpy(), parts_tensor[0].argmax(0).cpu().detach().numpy())
                 save_samples_truncated_part(save_path2, points.detach().numpy(), part[0].cpu().numpy())
                 save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
         torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, 'net_latest'))
