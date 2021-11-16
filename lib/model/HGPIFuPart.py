@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .BasePIFuNet import BasePIFuNet
-from .MLP import MLP
+from .MLP_PART import MLP_PART
 from .DepthNormalizer import DepthNormalizer
 from .HGFilters import HGFilter
 from ..net_util import init_net
@@ -42,7 +42,7 @@ class HGPIFuPart(BasePIFuNet):
         self.image_filter = HGFilter(opt.num_stack, opt.hg_depth, in_ch, opt.hg_dim,
                                     opt.norm, opt.hg_down, False)
 
-        self.mlp = MLP(
+        self.mlp = MLP_PART(
             filter_channels=self.opt.mlp_dim,
             merge_layer=self.opt.merge_layer,
             res_layers=self.opt.mlp_res_layers,
@@ -133,20 +133,11 @@ class HGPIFuPart(BasePIFuNet):
         self.intermediate_preds_list = []       
         
         sp_feat = self.spatial_enc(xyz, calibs=calibs)
-        
-        ## debugging
-#         for i in self.im_feat_list:
-#             print(i.shape)
-#         print("sp_feat: ", sp_feat[:,:,:10])
 
         for i, im_feat in enumerate(self.im_feat_list):
-#             print(self.index(im_feat,xy).shape)
-#             print(sp_feat.shape)
             point_local_feat_list = [self.index(im_feat, xy), sp_feat]
             point_local_feat = torch.cat(point_local_feat_list, 1)
-#             print(point_local_feat.shape)
             pred, part = self.mlp(point_local_feat)
-#             print("part shape in main", part.shape)
             pred = in_bb * pred
 
             self.intermediate_parts_list.append(part)

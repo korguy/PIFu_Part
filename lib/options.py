@@ -59,7 +59,7 @@ class BaseOptions():
         g_model.add_argument('--hg_dim', type=int, default=256)
 
         g_model.add_argument('--mlp_norm', type=str, default=None)
-        g_model.add_argument('--mlp_dim', nargs='+', default=[257, 512, 128, 1], type=int,
+        g_model.add_argument('--mlp_dim', nargs='+', default=[257, 128, 128, 128, 1], type=int,
             help='# of dimensions of mlp. no need to put the first channel')
         g_model.add_argument('--mlp_dim_color', nargs='+', default=[1024, 512, 256, 128, 3], type=int,
             help='# of dimensions of mlp. no need to put the first channel')
