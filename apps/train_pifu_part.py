@@ -143,7 +143,7 @@ def train(opt):
                 save_path2 = os.path.join(opt.results_path, opt.name, f'part_{epoch}_{train_idx}.ply')
                 r = res[0].cpu()
                 points = samples_tensor[0].transpose(0, 1).cpu()
-                print(parts_tensor[0].cpu().numpy()[:30])
+                print(parts_tensor[0].cpu().numpy().argmax(1)[:30])
                 print(part[0].cpu().numpy()[:30])
                 save_samples_truncated_part(save_path2, points.detach().numpy(), part[0].cpu().numpy())
                 save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
