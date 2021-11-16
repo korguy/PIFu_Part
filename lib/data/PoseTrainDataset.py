@@ -64,7 +64,7 @@ def save_samples_truncated_part(fname, points, part):
 					  points.shape[0])
 				  )
 	
-def save_samples_truncted_prob(fname, points, prob):
+def save_samples_truncated_prob(fname, points, prob):
 	'''
 	Save the visualization of sampling to a ply file.
 	Red points represent positive predictions.
