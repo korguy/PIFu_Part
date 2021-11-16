@@ -18,7 +18,7 @@ class HGPIFuPart(BasePIFuNet):
     def __init__(self, 
                 opt, 
                 projection_mode='orthogonal', 
-                criteria={'occ': nn.MSELoss(),
+                criteria={'occ': nn.BCEWithLogitsLoss(),
                             'part': nn.CrossEntropyLoss()}
                 ):
         super(HGPIFuPart, self).__init__(
