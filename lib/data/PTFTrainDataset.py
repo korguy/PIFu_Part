@@ -16,7 +16,7 @@ import datetime
 log = logging.getLogger('trimesh')
 log.setLevel(40)
 
-def get_part_and_correspondences(file, vertices, points, body_parts):
+def get_part(file, vertices, points, body_parts):
     def get_dist(pt1, pt2):
         return sqrt((pt1[0]-pt2[0])**2 +(pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
     part = []
@@ -331,11 +331,11 @@ class PTFTrainDataset(Dataset):
         surface_points_vertices_indices = []
         
         for single_face in surface_points_faces:
-            surface_points_vertices_indices.append(min(single_face)) # take the first vertex of the face as a representative
+            surface_points_vertices_indices.append(min(single_face))
         
         ## get correspondences
         surface_points_correspondences = []
-        
+
    
         for idx_num in surface_points_vertices_indices:
             idx = str(idx_num)
