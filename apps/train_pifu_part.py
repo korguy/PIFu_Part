@@ -139,11 +139,12 @@ def train(opt):
             if train_idx % 5000 == 0 and train_idx != 0:
                 break
 
-        save_path = os.path.join(opt.results_path, opt.name, epoch, f'pred{epoch}.ply')
-        r = res[0].cpu()
-        points = samples_tensor[0].transpose(0, 1).cpu()
-        save_samples_truncated_part("./part.ply", points.detach().numpy(), part[0].cpu().numpy())
-        save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
+            if train_idx % 100 == 0 and train_idx != 0:
+                save_path = os.path.join(opt.results_path, opt.name, epoch, f'pred{epoch}.ply')
+                r = res[0].cpu()
+                points = samples_tensor[0].transpose(0, 1).cpu()
+                save_samples_truncated_part("./part.ply", points.detach().numpy(), part[0].cpu().numpy())
+                save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
         torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, 'net_latest'))
         torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, f'net_epoch_{epoch}'))
         scheduler.step()
