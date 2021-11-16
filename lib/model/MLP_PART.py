@@ -55,7 +55,7 @@ class MLP_PART(nn.Module):
 
         net_full = self.part_out(net_full) # [B, num_parts, N]
         net_full *= parts_softmax
-        out_full = net_full.mean(1).view(net_full.shape[0], 1, -1)
+        out_full = net_full.mean(1)
 
         if self.last:
             out_full = self.last(out_full)

@@ -134,10 +134,6 @@ def train(opt):
 
             iter_data_time = time.time()
 
-            if train_idx % opt.save_model == 0 and train_idx != 0:
-                torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, 'net_latest'))
-                torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, f'net_epoch_{epoch}'))
-
             if train_idx % opt.freq_save_ply == 0 and train_idx != 0:
                 save_path = os.path.join(opt.results_path, opt.name, f'pred_{epoch}_{train_idx}.ply')
                 save_path2 = os.path.join(opt.results_path, opt.name, f'part_{epoch}_{train_idx}.ply')
@@ -149,6 +145,10 @@ def train(opt):
                 save_samples_truncated_part(save_path4, points.detach().numpy(), parts_tensor[0].argmax(0).cpu().detach().numpy())
                 save_samples_truncated_part(save_path2, points.detach().numpy(), part[0].cpu().numpy())
                 save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
+
+            if train_idx % 6000 == 0 and train_idx != 0:
+                break
+
         torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, 'net_latest'))
         torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, f'net_epoch_{epoch}'))
         scheduler.step()
