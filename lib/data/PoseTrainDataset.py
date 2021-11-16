@@ -50,7 +50,6 @@ def save_samples_truncated_part(fname, points, part):
 	points: [N, 3] points sampled from mesh
 	part: [N, 20] one hot vector representation
 	'''
-	part_idx = np.argmax(part, axis=1)
 	r = ((255/20)*part_idx).reshape((-1, 1))
 	g = (255//(part_idx+1)).reshape((-1, 1))
 	b = (255/20*(20-part_idx)).reshape((-1, 1))

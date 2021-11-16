@@ -1,2 +1,2 @@
-from .PoseTrainDataset import PoseTrainDataset
-from .PTFTrainDataset import PTFTrainDataset
+from .PoseTrainDataset import *
+from .PTFTrainDataset import *

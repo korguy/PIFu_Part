@@ -18,7 +18,8 @@ class HGPIFuPart(BasePIFuNet):
     def __init__(self, 
                 opt, 
                 projection_mode='orthogonal', 
-                criteria={'occ': nn.MSELoss()}
+                criteria={'occ': nn.MSELoss(),
+                            'part': nn.CrossEntropyLoss()}
                 ):
         super(HGPIFuPart, self).__init__(
             projection_mode=projection_mode,
@@ -59,6 +60,7 @@ class HGPIFuPart(BasePIFuNet):
 
         self.netF = None
         self.netB = None
+
         try:
             if opt.use_front_normal:
                 self.netF = define_G(3, 3, 64, "global", 4, 9, 1, 3, "instance")
@@ -66,6 +68,7 @@ class HGPIFuPart(BasePIFuNet):
                 self.netB = define_G(3, 3, 64, "global", 4, 9, 1, 3, "instance")
         except:
             pass
+
         self.nmlF = None
         self.nmlB = None
 
@@ -117,6 +120,10 @@ class HGPIFuPart(BasePIFuNet):
             labels: [B, C, N] ground truth labels (for supervision)
             parts: [B, 26, N] ground truth parts (for supervision)
         '''
+
+        self.intermediate_parts_list = []
+        self.intermediate_preds_list = []    
+
         xyz = self.projection(points, calibs, transforms)
         xy = xyz[:, :2, :]
 
@@ -126,10 +133,7 @@ class HGPIFuPart(BasePIFuNet):
         in_bb = in_bb[:, None, :].detach().float()
 
         if labels is not None:
-            self.lables = in_bb * labels
-
-        self.intermediate_parts_list = []
-        self.intermediate_preds_list = []       
+            self.lables = in_bb * labels   
         
         sp_feat = self.spatial_enc(xyz, calibs=calibs)
 
@@ -155,14 +159,13 @@ class HGPIFuPart(BasePIFuNet):
         error['Err(occ)'] /= len(self.intermediate_preds_list)
 
         for part in self.intermediate_parts_list:
-            tmp = F.cross_entropy(part, self.gt_parts.long()) * 0.1
-            error['Err(part)'] += tmp
+            error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long()) * 0.1
         error['Err(part)'] /= len(self.intermediate_parts_list)
-        
+
         return error
 
     def get_part(self):
-        return self.parts
+        return self.parts.argmax(1)
 
     def get_im_feat(self):
         return self.im_feat_list[-1]
@@ -177,6 +180,7 @@ class HGPIFuPart(BasePIFuNet):
         self.query(points=points, calibs=calibs, transforms=transforms, labels=labels, parts=parts)
 
         res = self.get_preds()
+        part = self.get_part()
         error = self.get_error()
 
-        return res, error
+        return res, error, part
