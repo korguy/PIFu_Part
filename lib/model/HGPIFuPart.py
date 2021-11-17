@@ -172,7 +172,7 @@ class HGPIFuPart(BasePIFuNet):
 
 
     def forward(self, images, points, calibs, labels, parts, transforms=None):
-        self.gt_parts = parts.argmax(1)
+        self.gt_parts = parts
         self.labels = labels
 
         self.filter(images)

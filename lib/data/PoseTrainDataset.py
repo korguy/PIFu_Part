@@ -16,24 +16,6 @@ import datetime
 log = logging.getLogger('trimesh')
 log.setLevel(40)
 
-def get_part(file, vertices, points, body_parts):
-	def get_dist(pt1, pt2):
-		return sqrt((pt1[0]-pt2[0])**2 +(pt1[1]-pt2[1])**2 + (pt1[2]-pt2[2])**2)
-	part = []
-	for point in points:
-		_min = float('inf')
-		_idx = 0
-		for idx, vertice in enumerate(vertices[::5]):
-			dist = get_dist(point, vertice)
-			if _min > dist:
-				_min = dist
-				_idx = idx
-		tmp = [0 for i in range(20)]
-		tmp[ body_parts.index(file[str(_idx)]) ] = 1 # one-hot vector making
-		part.append(tmp)
-	part = np.array(part)
-	return part
-
 def load_trimesh(root_dir):
 	folders = os.listdir(root_dir)
 	meshs = {}
@@ -41,8 +23,6 @@ def load_trimesh(root_dir):
 		sub_name = f
 		meshs[sub_name] = trimesh.load(os.path.join(root_dir, f, '%s_posed.obj' % sub_name), process=False, maintain_order=True,
 									  skip_uv=True)
-		#### mesh = trimesh.load("alvin_t_posed.obj",process=False, maintain_order=True, skip_uv=True)
-
 	return meshs
 
 def save_samples_truncated_part(fname, points, part):
@@ -87,6 +67,26 @@ def save_samples_truncated_prob(fname, points, prob):
 						  'ply\nformat ascii 1.0\nelement vertex {:d}\nproperty float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\nend_header').format(
 						  points.shape[0])
 					  )
+
+def bounded(orig_vertices, out_pts, json_file, body_part, th=20/128, apply_filter=False):
+    '''
+    Get indices of vertices that are within threshold 
+    '''
+    def to_str(e):
+        return body_part.index(json_file[str(e)])
+    f = np.vectorize(to_str)
+    repeat = orig_vertices.shape[0]
+    out_pts = np.repeat(out_pts.reshape(out_pts.shape[0], 1, -1), repeat, axis=1)
+    cmp = np.power((out_pts - orig_vertices), 2)
+    cmp = np.sum(cmp, axis=2)
+    cmp = np.sqrt(cmp)
+    indices = cmp.argmin(1)
+    indices = f(indices)
+    if apply_filter:
+        val = cmp.min(1)
+        val = np.where(val > th)
+        indices[val] = 20
+    return indices
 
 class PoseTrainDataset(Dataset):
 
@@ -326,69 +326,42 @@ class PoseTrainDataset(Dataset):
 		surface_points, surface_points_face_indices = trimesh.sample.sample_surface(mesh, 4 * self.num_sample_inout)
 		sample_points = surface_points + np.random.normal(scale=(self.opt.sigma / 128.), size=surface_points.shape)
 		
-		body_parts = [ 'head', 'neck','spine', 'hip', 
-					   'shoulder_l', 'upperarm_l', 'lowerarm_l', 'hand_l', 'finger_l',
-					   'shoulder_r', 'upperarm_r', 'lowerarm_r', 'hand_r', 'finger_r',  
-					   'upperleg_l', 'lowerleg_l', 'foot_l', 
-					   'upperleg_r', 'lowerleg_r', 'foot_r' ] 
-		
-		# one-hot vectors of the sampled points
-		surface_points_body_parts = []
-		
-		with open(os.path.join(self.PART, subject, "%s_part.json" % subject.split('_')[0])) as f: 
-			json_data = json.load(f)
-		ref = max([int(x) for x in json_data.keys()])
-		surface_points_faces = mesh.faces[surface_points_face_indices]
-		surface_points_vertices_indices = []
-		
-		for single_face in surface_points_faces:
-			surface_points_vertices_indices.append(min(single_face)) # take the first vertex of the face as a representative
-		
-   
-		for idx_num in surface_points_vertices_indices:
-			idx = str(idx_num)
-			temp = [0 for i in range(20)]
-			temp[ body_parts.index(json_data[idx]) ] = 1 # one-hot vector making
-			surface_points_body_parts.append(temp)
-			
 		# add random points within image space
 		length = self.B_MAX - self.B_MIN
-		### New
 		random_points = np.random.rand(self.num_sample_inout // 4, 3) * length + self.B_MIN
 		sample_points = np.concatenate([sample_points, random_points], 0)
-		random_parts = get_part(json_data, mesh.vertices, random_points, body_parts)
-		surface_points_body_parts = np.concatenate([surface_points_body_parts, random_parts], 0)
-		###
-#         for i in range(0, self.num_sample_inout // 4):
-#             surface_points_body_parts.append([0 for i in range(20)]) # append zero vectors [0, 0, 0, ... , 0] 
 			
 		s = np.arange(sample_points.shape[0])
 		np.random.shuffle(s)
 		sample_points = sample_points[s]
-		surface_points_body_parts = np.array(surface_points_body_parts)[s]
-		#np.random.shuffle(sample_points)
 				
 		inside = mesh.contains(sample_points)
 		inside_points = sample_points[inside]
-		inside_parts = surface_points_body_parts[inside]
 		outside_points = sample_points[np.logical_not(inside)]
-		outside_parts = surface_points_body_parts[np.logical_not(inside)]
 
 		nin = inside_points.shape[0]
 		inside_points = inside_points[
 						:self.num_sample_inout // 2] if nin > self.num_sample_inout // 2 else inside_points
-		inside_parts = inside_parts[
-						:self.num_sample_inout // 2] if nin > self.num_sample_inout // 2 else inside_parts
 		outside_points = outside_points[
 						 :self.num_sample_inout // 2] if nin > self.num_sample_inout // 2 else outside_points[
 																							   :(self.num_sample_inout - nin)]
-		outside_parts = outside_parts[
-						 :self.num_sample_inout // 2] if nin > self.num_sample_inout // 2 else outside_parts[
-																							   :(self.num_sample_inout - nin)]
+		# parts	
+		body_parts = [ 'head', 'neck','spine', 'hip', 
+			   'shoulder_l', 'upperarm_l', 'lowerarm_l', 'hand_l', 'finger_l',
+			   'shoulder_r', 'upperarm_r', 'lowerarm_r', 'hand_r', 'finger_r',  
+			   'upperleg_l', 'lowerleg_l', 'foot_l', 
+			   'upperleg_r', 'lowerleg_r', 'foot_r'] 							
 
-		samples = np.concatenate([inside_points, outside_points], 0).T
+		with open(os.path.join(self.PART, subject, "%s_part.json" % subject.split('_')[0])) as f: 
+			json_data = json.load(f)
+
+		in_parts = bounded(mesh.vertices, inside_points, json_data, body_parts)
+		out_parts = bounded(mesh.vertices, outside_points, json_data, body_parts, apply_filter=True)
+
+
+		samples = np.concatenate([inside_points, outside_points], 0).reshape(-1, 1).T
 		labels = np.concatenate([np.ones((1, inside_points.shape[0])), np.zeros((1, outside_points.shape[0]))], 1)
-		parts = np.concatenate([inside_parts, outside_parts], 0).T
+		parts = np.concatenate([in_parts, out_parts], 0).T
 
 		os.makedirs(os.path.join(self.CACHE, subject), exist_ok=True)
 
@@ -396,10 +369,6 @@ class PoseTrainDataset(Dataset):
 		np.save(os.path.join(self.CACHE, subject, "labels.npy"), labels)
 		np.save(os.path.join(self.CACHE, subject, "parts.npy"), parts)
 
-#         save_samples_truncted_prob('./out.ply', samples.T, labels.T)
-#         exit()
-#         save_samples_truncated_part('./part.ply', samples.T, parts.T)
-#         exit()
 
 		samples = torch.Tensor(samples).float()
 		labels = torch.Tensor(labels).float()

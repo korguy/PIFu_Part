@@ -124,7 +124,7 @@ def train(opt):
                         prec_arr.append(prec.item())
                         recall_arr.append(recall.item())
 
-                    eval_errors = np.average(err_arr), np.average(IOU_arr), np.average(prec_arr), np.average(reacll_arr)
+                    eval_errors = np.average(err_arr), np.average(IOU_arr), np.average(prec_arr), np.average(recall_arr)
                     print('eval test err: {0:06f} | IOU: {1:06f} | prec: {2:06f} | recall: {3:06f}'.format(*eval_errors))
                     writer.add_scalar('test loss', eval_errors[0], epoch * len(train_data_loader) + train_idx)
                     writer.add_scalar('test IOU', eval_errors[1], epoch * len(train_data_loader) + train_idx)
@@ -149,8 +149,8 @@ def train(opt):
             if train_idx % 6000 == 0 and train_idx != 0:
                 break
 
-        torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, 'net_latest'))
-        torch.save(net.state_dict(), os.path.join(opt.checkpoints_path, opt.name, f'net_epoch_{epoch}'))
+        torch.save(net.state_dict(), os.path.join(opt.load_checkpoints_path, opt.name, 'net_latest'))
+        torch.save(net.state_dict(), os.path.join(opt.load_checkpoints_path, opt.name, f'net_epoch_{epoch}'))
         scheduler.step()
 
 if __name__ == '__main__':
