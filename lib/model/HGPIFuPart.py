@@ -131,7 +131,6 @@ class HGPIFuPart(BasePIFuNet):
         in_bb = (xyz >= -1) & (xyz <= 1)
         in_bb = in_bb[:, 0, :] & in_bb[:, 1, :] & in_bb[:, 2, :]
         in_bb = in_bb[:, None, :].detach().float()
-        out_bb = in_bb.logical_not()
 
         if labels is not None:
             self.lables = in_bb * labels   
@@ -143,7 +142,6 @@ class HGPIFuPart(BasePIFuNet):
             point_local_feat = torch.cat(point_local_feat_list, 1)
             pred, part = self.mlp(point_local_feat)
             pred = in_bb * pred
-            part[out_bb] = self.opt.num_parts - 1
 
             self.intermediate_parts_list.append(part)
             self.intermediate_preds_list.append(pred)
