@@ -87,6 +87,10 @@ def train(opt):
             labels_tensor = train_data['labels'].to(device=cuda)
             parts_tensor = train_data['parts'].to(device=cuda)
 
+            print(samples_tensor.shape)
+            print(labels_tensor.shape)
+            print(parts_tensor.shape)
+
             res, _error, part = net.forward(img_tensor, samples_tensor, calib_tensor, labels_tensor, parts_tensor)
 
             optimizer.zero_grad()
@@ -145,9 +149,6 @@ def train(opt):
                 save_samples_truncated_part(save_path4, points.detach().numpy(), parts_tensor[0].argmax(0).cpu().detach().numpy())
                 save_samples_truncated_part(save_path2, points.detach().numpy(), part[0].cpu().numpy())
                 save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
-
-            if train_idx % 6000 == 0 and train_idx != 0:
-                break
 
         torch.save(net.state_dict(), os.path.join(opt.load_checkpoints_path, opt.name, 'net_latest'))
         torch.save(net.state_dict(), os.path.join(opt.load_checkpoints_path, opt.name, f'net_epoch_{epoch}'))

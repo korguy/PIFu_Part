@@ -131,6 +131,7 @@ class HGPIFuPart(BasePIFuNet):
         in_bb = (xyz >= -1) & (xyz <= 1)
         in_bb = in_bb[:, 0, :] & in_bb[:, 1, :] & in_bb[:, 2, :]
         in_bb = in_bb[:, None, :].detach().float()
+        out_bb = in_bb.logical_not()
 
         if labels is not None:
             self.lables = in_bb * labels   
@@ -142,6 +143,7 @@ class HGPIFuPart(BasePIFuNet):
             point_local_feat = torch.cat(point_local_feat_list, 1)
             pred, part = self.mlp(point_local_feat)
             pred = in_bb * pred
+            part[out_bb] = self.opt.num_parts - 1
 
             self.intermediate_parts_list.append(part)
             self.intermediate_preds_list.append(pred)
@@ -159,7 +161,7 @@ class HGPIFuPart(BasePIFuNet):
         error['Err(occ)'] /= len(self.intermediate_preds_list)
 
         for part in self.intermediate_parts_list:
-            error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long()) * 0.1
+            error['Err(part)'] += F.cross_entropy(part, self.gt_parts.long(), reduction='none').sum(-1).mean() * 0.1
         error['Err(part)'] /= len(self.intermediate_parts_list)
 
         return error

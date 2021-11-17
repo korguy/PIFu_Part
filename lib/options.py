@@ -8,7 +8,7 @@ class BaseOptions():
 
     def initialize(self, parser):
 
-        parser.add_argument('--name', type=str, default='ptf_pifu')
+        parser.add_argument('--name', type=str, default='part_pifu')
 
         g_data = parser.add_argument_group('Data')
         g_data.add_argument('--dataroot', type=str, default='./training_data')
