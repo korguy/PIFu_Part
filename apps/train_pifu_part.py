@@ -87,10 +87,6 @@ def train(opt):
             labels_tensor = train_data['labels'].to(device=cuda)
             parts_tensor = train_data['parts'].to(device=cuda)
 
-            print(samples_tensor.shape)
-            print(labels_tensor.shape)
-            print(parts_tensor.shape)
-
             res, _error, part = net.forward(img_tensor, samples_tensor, calib_tensor, labels_tensor, parts_tensor)
 
             optimizer.zero_grad()

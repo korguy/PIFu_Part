@@ -323,7 +323,7 @@ class PoseTrainDataset(Dataset):
 			}
 
 		mesh = self.mesh_dic[subject]
-		surface_points, surface_points_face_indices = trimesh.sample.sample_surface(mesh, 4 * self.num_sample_inout)
+		surface_points, _ = trimesh.sample.sample_surface(mesh, 4 * self.num_sample_inout)
 		sample_points = surface_points + np.random.normal(scale=(self.opt.sigma / 128.), size=surface_points.shape)
 		
 		# add random points within image space
@@ -341,9 +341,9 @@ class PoseTrainDataset(Dataset):
 
 		nin = inside_points.shape[0]
 		inside_points = inside_points[
-						:self.num_sample_inout // 2] if nin > self.num_sample_inout // 2 else inside_points
+						:self.num_sample_inout // 8 * 5] if nin > self.num_sample_inout // 2 else inside_points
 		outside_points = outside_points[
-						 :self.num_sample_inout // 2] if nin > self.num_sample_inout // 2 else outside_points[
+						 :self.num_sample_inout // 8 * 3] if nin > self.num_sample_inout // 2 else outside_points[
 																							   :(self.num_sample_inout - nin)]
 		# parts	
 		body_parts = [ 'head', 'neck','spine', 'hip', 
@@ -359,9 +359,9 @@ class PoseTrainDataset(Dataset):
 		out_parts = bounded(mesh.vertices, outside_points, json_data, body_parts, apply_filter=True)
 
 
-		samples = np.concatenate([inside_points, outside_points], 0).reshape(-1, 1).T
+		samples = np.concatenate([inside_points, outside_points], 0).T
 		labels = np.concatenate([np.ones((1, inside_points.shape[0])), np.zeros((1, outside_points.shape[0]))], 1)
-		parts = np.concatenate([in_parts, out_parts], 0).T
+		parts = np.concatenate([in_parts, out_parts], 0).reshape(-1, 1).T
 
 		os.makedirs(os.path.join(self.CACHE, subject), exist_ok=True)
 
