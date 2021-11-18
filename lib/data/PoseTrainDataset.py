@@ -358,7 +358,7 @@ class PoseTrainDataset(Dataset):
 			json_data = json.load(f)
 
 		in_parts = chamfer_distance(inside_points, mesh.vertices, json_data, body_parts)
-		out_parts = chamfer_distance(outside_points, mesh.vertices, json_data, body_parts, apply_filter=True, th=sigma)
+		out_parts = chamfer_distance(outside_points, mesh.vertices, json_data, body_parts, apply_filter=True, th=self.opt.sigma)
 
 		samples = np.concatenate([inside_points, outside_points], 0).T
 		labels = np.concatenate([np.ones((1, inside_points.shape[0])), np.zeros((1, outside_points.shape[0]))], 1)
