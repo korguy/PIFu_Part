@@ -31,7 +31,7 @@ def sum_dict(los):
     return temp
 
 def train(opt):
-    cuda = torch.device(f'cuda')
+    cuda = torch.device('cuda')
 
     train_dataset = PoseTrainDataset(opt, phase='train')
     test_dataset = PoseTrainDataset(opt, phase='eval')
@@ -39,13 +39,13 @@ def train(opt):
 
     train_data_loader = DataLoader(train_dataset,
                                     batch_size=opt.batch_size, shuffle=not opt.serial_batches,
-                                    num_workers=opt.num_threads, pin_memory=opt.pin_memory)
+                                    num_workers=0, pin_memory=opt.pin_memory)
     print('train data size: ', len(train_data_loader))
     test_data_loader = DataLoader(test_dataset,
                                     batch_size=1, shuffle=True,
-                                    num_workers=opt.num_threads, pin_memory=opt.pin_memory)
+                                    num_workers=0, pin_memory=opt.pin_memory)
     print('test data size: ', len(test_data_loader))
-
+    
     net = HGPIFuPart(opt, "orthogonal").to(device=cuda)
     print("Using Network: ", net.name)
     net.load_FB()
