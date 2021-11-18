@@ -12,6 +12,8 @@ import logging
 import json
 from math import sqrt
 import datetime
+from sklearn.neighbors import NearestNeighbors
+
 
 log = logging.getLogger('trimesh')
 log.setLevel(40)
@@ -68,25 +70,39 @@ def save_samples_truncated_prob(fname, points, prob):
 						  points.shape[0])
 					  )
 
-def bounded(orig_vertices, out_pts, json_file, body_part, th=20/128, apply_filter=False):
-    '''
-    Get indices of vertices that are within threshold 
-    '''
+def chamfer_distance(x, y, json_data, body_parts, metric='l2', apply_filter=False, th=0.1):
+    """Chamfer distance between two point clouds
+    Parameters
+    ----------
+    x: numpy array [n_points_x, n_dims]
+        first point cloud
+    y: numpy array [n_points_y, n_dims]
+        second point cloud
+    metric: string or callable, default ‘l2’
+        metric to use for distance computation. Any metric from scikit-learn or scipy.spatial.distance can be used.
+    direction: str
+        direction of Chamfer distance.
+            'y_to_x':  computes average minimal distance from every point in y to x
+            'x_to_y':  computes average minimal distance from every point in x to y
+            'bi': compute both
+    Returns
+    -------
+    chamfer_dist: float
+        computed bidirectional Chamfer distance:
+            sum_{x_i \in x}{\min_{y_j \in y}{||x_i-y_j||**2}} + sum_{y_j \in y}{\min_{x_i \in x}{||x_i-y_j||**2}}
+    """
     def to_str(e):
-        return body_part.index(json_file[str(e)])
+        return body_parts.index(json_data[str(e)])
     f = np.vectorize(to_str)
-    repeat = orig_vertices.shape[0]
-    out_pts = np.repeat(out_pts.reshape(out_pts.shape[0], 1, -1), repeat, axis=1)
-    cmp = np.power((out_pts - orig_vertices), 2)
-    cmp = np.sum(cmp, axis=2)
-    cmp = np.sqrt(cmp)
-    indices = cmp.argmin(1)
-    indices = f(indices)
+    y_nn = NearestNeighbors(n_neighbors=1, leaf_size=1, algorithm='kd_tree', metric=metric).fit(y)
+    min_x_to_y, y_idx = y_nn.kneighbors(x)
+    chamfer_dist = min_x_to_y
+    dist, idx = chamfer_dist.T[0], y_idx[:, 0]
+    ret = f(idx)
     if apply_filter:
-        val = cmp.min(1)
-        val = np.where(val > th)
-        indices[val] = 20
-    return indices
+        dist = np.where(dist > th)
+        idx[dist] = 20
+    return ret
 
 class PoseTrainDataset(Dataset):
 
@@ -185,7 +201,7 @@ class PoseTrainDataset(Dataset):
 		mask_list = []
 		extrinsic_list = []
 		
-		vid = 0
+		vid = view_ids[0]
 
 		param_path = os.path.join(self.PARAM, subject, '%d_%d_%02d.npy' % (vid, pitch, 0))
 		render_path = os.path.join(self.RENDER, subject, '%d_%d_%02d.jpg' % (vid, pitch, 0))
@@ -308,23 +324,9 @@ class PoseTrainDataset(Dataset):
 			np.random.seed(1997)
 			torch.manual_seed(1997)
 
-		if os.path.exists(os.path.join(self.CACHE, subject)):
-			samples = np.load(os.path.join(self.CACHE, subject, "samples.npy"))
-			labels = np.load(os.path.join(self.CACHE, subject, "labels.npy"))
-			parts = np.load(os.path.join(self.CACHE, subject, "parts.npy"))
-			samples = torch.Tensor(samples).float()
-			labels = torch.Tensor(labels).float()
-			parts = torch.Tensor(parts).float()
-
-			return {
-				'samples': samples,
-				'labels': labels,
-				'parts': parts
-			}
-
 		mesh = self.mesh_dic[subject]
 		surface_points, _ = trimesh.sample.sample_surface(mesh, 4 * self.num_sample_inout)
-		sample_points = surface_points + np.random.normal(scale=(self.opt.sigma / 128.), size=surface_points.shape)
+		sample_points = surface_points + np.random.normal(scale=(self.opt.sigma), size=surface_points.shape)
 		
 		# add random points within image space
 		length = self.B_MAX - self.B_MIN
@@ -355,20 +357,12 @@ class PoseTrainDataset(Dataset):
 		with open(os.path.join(self.PART, subject, "%s_part.json" % subject.split('_')[0])) as f: 
 			json_data = json.load(f)
 
-		in_parts = bounded(mesh.vertices, inside_points, json_data, body_parts)
-		out_parts = bounded(mesh.vertices, outside_points, json_data, body_parts, apply_filter=True)
-
+		in_parts = chamfer_distance(inside_points, mesh.vertices, json_data, body_parts)
+		out_parts = chamfer_distance(outside_points, mesh.vertices, json_data, body_parts, apply_filter=True, th=sigma)
 
 		samples = np.concatenate([inside_points, outside_points], 0).T
 		labels = np.concatenate([np.ones((1, inside_points.shape[0])), np.zeros((1, outside_points.shape[0]))], 1)
 		parts = np.concatenate([in_parts, out_parts], 0).T
-
-		os.makedirs(os.path.join(self.CACHE, subject), exist_ok=True)
-
-		np.save(os.path.join(self.CACHE, subject, "samples.npy"), samples)
-		np.save(os.path.join(self.CACHE, subject, "labels.npy"), labels)
-		np.save(os.path.join(self.CACHE, subject, "parts.npy"), parts)
-
 
 		samples = torch.Tensor(samples).float()
 		labels = torch.Tensor(labels).float()
