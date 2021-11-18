@@ -142,6 +142,8 @@ class HGPIFuPart(BasePIFuNet):
             point_local_feat = torch.cat(point_local_feat_list, 1)
             pred, part = self.mlp(point_local_feat)
             pred = in_bb * pred
+            part[:, :-1, :] * in_bb
+            part[:, -1:, :] = torch.logical_not(in_bb)
 
             self.intermediate_parts_list.append(part)
             self.intermediate_preds_list.append(pred)

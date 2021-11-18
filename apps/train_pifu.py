@@ -18,6 +18,7 @@ from lib.options import BaseOptions
 from lib.data import *
 from lib.model import HGPIFu
 from lib.train_util import *
+from lib.mesh_util import *
 
 opt = BaseOptions().parse()
 summary_path = os.path.join('.', 'runs', f'{opt.name}')
@@ -122,7 +123,7 @@ def train(opt):
                     writer.add_scalar('test IOU', eval_errors[1], epoch * len(train_data_loader) + train_idx)
                     writer.add_scalar('test precision', eval_errors[2], epoch * len(train_data_loader) + train_idx)
                     writer.add_scalar('test recall', eval_errors[3], epoch * len(train_data_loader) + train_idx) 
-                    
+
                 set_train()
 
             iter_data_time = time.time()
@@ -132,6 +133,15 @@ def train(opt):
                 r = res[0].cpu()
                 points = samples_tensor[0].transpose(0, 1).cpu()
                 save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
+
+            if train_idx % opt.freq_mesh == 0 and train_idx != 0:
+                with torch.no_grad():
+                    set_eval()
+                    for idx, test_data in enumerate(test_data_loader):
+                        save_path = '%s/%s/recon/result_%d_%d.obj' % (opt.results_path, opt.name, epoch, train_idx)
+                        gen_mesh(opt.resolution, net, cuda, test_data, save_path, components=None)
+                        break
+                set_train()
 
         torch.save(net.state_dict(), os.path.join(opt.load_checkpoints_path, opt.name, 'net_latest'))
         torch.save(net.state_dict(), os.path.join(opt.load_checkpoints_path, opt.name, f'net_epoch_{epoch}'))

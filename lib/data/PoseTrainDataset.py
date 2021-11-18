@@ -230,9 +230,9 @@ class PoseTrainDataset(Dataset):
 		scale_intrinsic[2, 2] = scale / ortho_ratio
 		# Match image pixel space to image uv space
 		uv_intrinsic = torch.eye(4).to(device)
-		uv_intrinsic[0, 0] = 1.0 / float(self.load_size // 2 * 2)
-		uv_intrinsic[1, 1] = 1.0 / float(self.load_size // 2 * 2)
-		uv_intrinsic[2, 2] = 1.0 / float(self.load_size // 2 * 2)
+		uv_intrinsic[0, 0] = 1.0 / float(self.load_size // 2 )
+		uv_intrinsic[1, 1] = 1.0 / float(self.load_size // 2 )
+		uv_intrinsic[2, 2] = 1.0 / float(self.load_size // 2 )
 		# Transform under image pixel space
 		trans_intrinsic = torch.eye(4).to(device)
 
