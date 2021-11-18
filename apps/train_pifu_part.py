@@ -127,6 +127,9 @@ def train(opt):
                         prec_arr.append(prec.item())
                         recall_arr.append(recall.item())
 
+                        if idx == 200:
+                            break
+
                     eval_errors = np.average(err_arr), np.average(IOU_arr), np.average(prec_arr), np.average(recall_arr)
                     print('eval test err: {0:06f} | IOU: {1:06f} | prec: {2:06f} | recall: {3:06f}'.format(*eval_errors))
                     writer.add_scalar('test loss', eval_errors[0], epoch * len(train_data_loader) + train_idx)
