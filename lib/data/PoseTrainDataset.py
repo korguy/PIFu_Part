@@ -223,7 +223,7 @@ class PoseTrainDataset(Dataset):
         R = param.item().get('R')
 
         translate = -np.matmul(R, center).reshape(3, 1)
-        extrinsic = np.concatenate([R, translate], dim=1)
+        extrinsic = np.concatenate([R, translate], 1)
         extrinsic = np.concatenate([extrinsic, np.array([0, 0, 0, 1]).reshape(1, 4)], 0)
         # Match camera space to image pixel space
         scale_intrinsic = np.identity(4)
@@ -293,7 +293,7 @@ class PoseTrainDataset(Dataset):
                 render = render.filter(blur)
 
         intrinsic = np.matmul(trans_intrinsic, np.matmul(uv_intrinsic, scale_intrinsic))
-        calib = np.matmul(intrinsic, extrinsic).float()
+        calib = torch.Tensor(np.matmul(intrinsic, extrinsic)).float()
         extrinsic = torch.Tensor(extrinsic).float()
 
         mask = transforms.Resize(self.load_size)(mask)
@@ -314,8 +314,8 @@ class PoseTrainDataset(Dataset):
             bg = self.to_tensor(bg)
 
             render = (1-mask).expand_as(render) * bg + render
-        	render_numpy = (np.transpose(render.numpy(), (1,2,0)) *255.).astype(np.uint8)
-        	Image.fromarray(render_numpy).save('./sample.png')
+            render_numpy = (np.transpose(render.numpy(), (1,2,0)) *255.).astype(np.uint8)
+            Image.fromarray(render_numpy).save('./sample.png')
 
         return {
             'img': render_list[0].detach(),
