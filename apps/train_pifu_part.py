@@ -113,6 +113,9 @@ def train(opt):
                         samples_tensor = test_data['samples'].to(device=cuda)
                         parts_tensor = test_data['parts'].to(device=cuda)
 
+                        if len(parts_tensor.shape) == 3:
+                            parts_tensor = parts_tensor.view(parts_tensor.shape[0], parts_tensor.shape[2])
+
                         labels_tensor = test_data['labels'].to(device=cuda)
 
                         res_eval, eval_err, eval_part = net.forward(img_tensor, samples_tensor, calib_tensor, labels_tensor, parts_tensor)

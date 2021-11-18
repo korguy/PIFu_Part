@@ -361,7 +361,7 @@ class PoseTrainDataset(Dataset):
 
 		samples = np.concatenate([inside_points, outside_points], 0).T
 		labels = np.concatenate([np.ones((1, inside_points.shape[0])), np.zeros((1, outside_points.shape[0]))], 1)
-		parts = np.concatenate([in_parts, out_parts], 0).reshape(-1, 1).T
+		parts = np.concatenate([in_parts, out_parts], 0).T
 
 		os.makedirs(os.path.join(self.CACHE, subject), exist_ok=True)
 
