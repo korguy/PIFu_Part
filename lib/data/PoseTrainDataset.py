@@ -134,6 +134,7 @@ class PoseTrainDataset(Dataset):
         if self.opt.random_bg:
             self.bg_img_list = [os.path.join(self.BG, x) for x in os.listdir(self.BG)]
             self.bg_img_list.sort()
+        print("BG Images:", len(self.bg_img_list))
 
         self.B_MIN = np.array([-128, -28, -128]) / 128
         self.B_MAX = np.array([128, 228, 128]) / 128
@@ -191,6 +192,7 @@ class PoseTrainDataset(Dataset):
             'mask': [num_views, 1, W, H] masks
         '''
         pitch = self.pitch_list[pid]
+        vid = 0
 
         # The ids are an even distribution of num_views around view_id
         view_ids = [self.yaw_list[(yid + len(self.yaw_list) // num_views * offset) % len(self.yaw_list)]
@@ -212,29 +214,29 @@ class PoseTrainDataset(Dataset):
         # loading calibration data
         param = np.load(param_path, allow_pickle=True)
         # pixel unit / world unit
-        ortho_ratio = torch.tensor(param.item().get('ortho_ratio')).to(self.device)
+        ortho_ratio = param.item().get('ortho_ratio')
         # world unit / model unit
-        scale = torch.tensor(param.item().get('scale')).to(self.device)
+        scale = param.item().get('scale')
         # camera center world coordinate
-        center = torch.tensor(param.item().get('center')).to(self.device)
+        center = param.item().get('center')
         # model rotation
-        R = torch.tensor(param.item().get('R')).to(self.device)
+        R = param.item().get('R')
 
-        translate = -torch.matmul(R, center).view(3, 1)
-        extrinsic = torch.cat([R, translate], dim=1)
-        extrinsic = torch.cat([extrinsic, torch.tensor([0, 0, 0, 1]).to(self.device).view(1, 4)], dim=0)
+        translate = -np.matmul(R, center).reshape(3, 1)
+        extrinsic = np.concatenate([R, translate], dim=1)
+        extrinsic = np.concatenate([extrinsic, np.array([0, 0, 0, 1]).reshape(1, 4)], 0)
         # Match camera space to image pixel space
-        scale_intrinsic = torch.eye(4).to(self.device)
+        scale_intrinsic = np.identity(4)
         scale_intrinsic[0, 0] = scale / ortho_ratio
         scale_intrinsic[1, 1] = -scale / ortho_ratio
         scale_intrinsic[2, 2] = scale / ortho_ratio
         # Match image pixel space to image uv space
-        uv_intrinsic = torch.eye(4).to(self.device)
-        uv_intrinsic[0, 0] = 1.0 / float(self.load_size // 2 )
-        uv_intrinsic[1, 1] = 1.0 / float(self.load_size // 2 )
-        uv_intrinsic[2, 2] = 1.0 / float(self.load_size // 2 )
+        uv_intrinsic = np.identity(4)
+        uv_intrinsic[0, 0] = 1.0 / float(self.load_size // 2 *2)
+        uv_intrinsic[1, 1] = 1.0 / float(self.load_size // 2 *2)
+        uv_intrinsic[2, 2] = 1.0 / float(self.load_size // 2 *2)
         # Transform under image pixel space
-        trans_intrinsic = torch.eye(4).to(self.device)
+        trans_intrinsic = np.identity(4)
 
         mask = Image.open(mask_path).convert('L')
         render = Image.open(render_path).convert('RGB')
@@ -246,7 +248,7 @@ class PoseTrainDataset(Dataset):
             mask = ImageOps.expand(mask, pad_size, fill=0)
 
             w, h = render.size
-            th, tw = self.load_size, self.load_size
+            th, tw = self.load_size *2, self.load_size*2
 
             # random flip
             if self.opt.random_flip and np.random.rand() > 0.5:
@@ -290,9 +292,9 @@ class PoseTrainDataset(Dataset):
                 blur = GaussianBlur(np.random.uniform(0, self.opt.aug_blur))
                 render = render.filter(blur)
 
-        intrinsic = torch.matmul(trans_intrinsic, torch.matmul(uv_intrinsic, scale_intrinsic))
-        calib = torch.matmul(intrinsic.float(), extrinsic.float()).detach().float()
-        extrinsic = extrinsic.detach().float()
+        intrinsic = np.matmul(trans_intrinsic, np.matmul(uv_intrinsic, scale_intrinsic))
+        calib = np.matmul(intrinsic, extrinsic).float()
+        extrinsic = torch.Tensor(extrinsic).float()
 
         mask = transforms.Resize(self.load_size)(mask)
         mask = transforms.ToTensor()(mask).float()
@@ -312,6 +314,8 @@ class PoseTrainDataset(Dataset):
             bg = self.to_tensor(bg)
 
             render = (1-mask).expand_as(render) * bg + render
+        	render_numpy = (np.transpose(render.numpy(), (1,2,0)) *255.).astype(np.uint8)
+        	Image.fromarray(render_numpy).save('./sample.png')
 
         return {
             'img': render_list[0].detach(),
