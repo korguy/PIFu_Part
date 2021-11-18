@@ -156,6 +156,11 @@ class PoseTrainDataset(Dataset):
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
+        self.to_tensor_big = transforms.Compose([
+            transforms.Resize(self.load_size * 2),
+            transforms.ToTensor(),
+            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+        ])
 
         # augmentation
         self.aug_trans = transforms.Compose([
@@ -243,7 +248,7 @@ class PoseTrainDataset(Dataset):
 
         if self.is_train:
             # Pad images
-            pad_size = int(0.1 * self.load_size)
+            pad_size = int(0.1 * self.load_size * 2)
             render = ImageOps.expand(render, pad_size, fill=0)
             mask = ImageOps.expand(mask, pad_size, fill=0)
 
@@ -303,17 +308,20 @@ class PoseTrainDataset(Dataset):
         render = self.to_tensor(render)
         render = mask.expand_as(render) * render
 
+        ## 여기까지 봄
         render_list.append(render)
         calib_list.append(calib)
         extrinsic_list.append(extrinsic)
 
         if self.opt.random_bg: # background에도 augmentation 추가하기
             bg_path = self.bg_img_list[np.random.randint(len(self.bg_img_list))]
-            bg = Image.open(bg_path).convert('RGB').resize((self.load_size, self.load_size), Image.NEAREST)
+            bg = Image.open(bg_path).convert('RGB').resize((self.load_size*2, self.load_size*2), Image.NEAREST)
 
             bg = self.to_tensor(bg)
 
             render = (1-mask).expand_as(render) * bg + render
+
+            # for debug
             render_numpy = (np.transpose(render.numpy(), (1,2,0)) *255.).astype(np.uint8)
             Image.fromarray(render_numpy).save('./sample.png')
 
