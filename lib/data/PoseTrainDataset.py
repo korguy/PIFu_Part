@@ -188,6 +188,8 @@ class PoseTrainDataset(Dataset):
 			'extrinsic': [num_views, 4, 4] extrinsic matrix
 			'mask': [num_views, 1, W, H] masks
 		'''
+		device = torch.device('cuda')
+
 		pitch = self.pitch_list[pid]
 
 		# The ids are an even distribution of num_views around view_id
@@ -210,29 +212,29 @@ class PoseTrainDataset(Dataset):
 		# loading calibration data
 		param = np.load(param_path, allow_pickle=True)
 		# pixel unit / world unit
-		ortho_ratio = param.item().get('ortho_ratio')
+		ortho_ratio = torch.tensor(param.item().get('ortho_ratio')).to(device)
 		# world unit / model unit
-		scale = param.item().get('scale')
+		scale = torch.tensor(param.item().get('scale')).to(device)
 		# camera center world coordinate
-		center = param.item().get('center')
+		center = torch.tensor(param.item().get('center')).to(device)
 		# model rotation
-		R = param.item().get('R')
+		R = torch.tensor(param.item().get('R')).to(device)
 
-		translate = -np.matmul(R, center).reshape(3, 1)
-		extrinsic = np.concatenate([R, translate], axis=1)
-		extrinsic = np.concatenate([extrinsic, np.array([0, 0, 0, 1]).reshape(1, 4)], 0)
+		translate = -torch.matul(R, center).view(3, 1)
+		extrinsic = torch.cat([R, translate], dim=1)
+		extrinsic = torch.cat([extrinsic, torch.tensor([0, 0, 0, 1]).to(device).view(1, 4)], dim=0)
 		# Match camera space to image pixel space
-		scale_intrinsic = np.identity(4)
+		scale_intrinsic = torch.eye(4).to(device)
 		scale_intrinsic[0, 0] = scale / ortho_ratio
 		scale_intrinsic[1, 1] = -scale / ortho_ratio
 		scale_intrinsic[2, 2] = scale / ortho_ratio
 		# Match image pixel space to image uv space
-		uv_intrinsic = np.identity(4)
+		uv_intrinsic = torch.eye(4).to(device)
 		uv_intrinsic[0, 0] = 1.0 / float(self.load_size // 2 * 2)
 		uv_intrinsic[1, 1] = 1.0 / float(self.load_size // 2 * 2)
 		uv_intrinsic[2, 2] = 1.0 / float(self.load_size // 2 * 2)
 		# Transform under image pixel space
-		trans_intrinsic = np.identity(4)
+		trans_intrinsic = torch.eye(4).to(device)
 
 		mask = Image.open(mask_path).convert('L')
 		render = Image.open(render_path).convert('RGB')
@@ -272,8 +274,8 @@ class PoseTrainDataset(Dataset):
 				dx = 0
 				dy = 0
 
-			trans_intrinsic[0, 3] = -dx / float(self.load_size // 2)
-			trans_intrinsic[1, 3] = -dy / float(self.load_size // 2)
+			trans_intrinsic[0, 3] = -dx / float(self.load_size // 2 * 2)
+			trans_intrinsic[1, 3] = -dy / float(self.load_size // 2 * 2)
 
 			x1 = int(round((w - tw) / 2.)) + dx
 			y1 = int(round((h - th) / 2.)) + dy
@@ -288,9 +290,9 @@ class PoseTrainDataset(Dataset):
 				blur = GaussianBlur(np.random.uniform(0, self.opt.aug_blur))
 				render = render.filter(blur)
 
-		intrinsic = np.matmul(trans_intrinsic, np.matmul(uv_intrinsic, scale_intrinsic))
-		calib = torch.Tensor(np.matmul(intrinsic, extrinsic)).float()
-		extrinsic = torch.Tensor(extrinsic).float()
+		intrinsic = torch.matmul(trans_intrinsic, torch.matmul(uv_intrinsic, scale_intrinsic))
+		calib = torch.matmul(intrinsic, extrinsic).detach().float()
+		extrinsic = extrinsic.detach().float()
 
 		mask = transforms.Resize(self.load_size)(mask)
 		mask = transforms.ToTensor()(mask).float()
@@ -323,6 +325,20 @@ class PoseTrainDataset(Dataset):
 			random.seed(1997)
 			np.random.seed(1997)
 			torch.manual_seed(1997)
+
+		if os.path.exists(os.path.join(self.CACHE, subject)):
+			samples = np.load(os.path.join(self.CACHE, subject, "samples.npy"))
+			labels = np.load(os.path.join(self.CACHE, subject, "labels.npy"))
+			parts = np.load(os.path.join(self.CACHE, subject, "parts.npy"))
+			samples = torch.Tensor(samples).float()
+			labels = torch.Tensor(labels).float()
+			parts = torch.Tensor(parts).float()
+
+			return {
+				'samples': samples,
+				'labels': labels,
+				'parts': parts
+			}
 
 		mesh = self.mesh_dic[subject]
 		surface_points, _ = trimesh.sample.sample_surface(mesh, 4 * self.num_sample_inout)
@@ -363,6 +379,12 @@ class PoseTrainDataset(Dataset):
 		samples = np.concatenate([inside_points, outside_points], 0).T
 		labels = np.concatenate([np.ones((1, inside_points.shape[0])), np.zeros((1, outside_points.shape[0]))], 1)
 		parts = np.concatenate([in_parts, out_parts], 0).T
+
+		os.makedirs(os.path.join(self.CACHE, subject), exist_ok=True)
+
+		np.save(os.path.join(self.CACHE, subject, "samples.npy"), samples)
+		np.save(os.path.join(self.CACHE, subject, "labels.npy"), labels)
+		np.save(os.path.join(self.CACHE, subject, "parts.npy"), parts)
 
 		samples = torch.Tensor(samples).float()
 		labels = torch.Tensor(labels).float()

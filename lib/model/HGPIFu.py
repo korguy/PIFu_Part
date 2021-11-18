@@ -3,13 +3,13 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from .BasePIFuNet import BasePIFuNet
-from .MLP_PART import MLP_PART
+from .MLP import MLP
 from .DepthNormalizer import DepthNormalizer
 from .HGFilters import HGFilter
 from ..net_util import init_net
 from ..networks import define_G
 
-class HGPIFuPart(BasePIFuNet):
+class HGPIFu(BasePIFuNet):
     '''
     HGPIFuPTF uses stacked hourglass as an image encoder
     + per part training has been added
@@ -18,16 +18,13 @@ class HGPIFuPart(BasePIFuNet):
     def __init__(self, 
                 opt, 
                 projection_mode='orthogonal', 
-                criteria={'occ': nn.BCEWithLogitsLoss(),
-                            'part': nn.CrossEntropyLoss()}
+                criteria={'occ': nn.MSELoss()}
                 ):
-        super(HGPIFuPart, self).__init__(
+        super(HGPIFu, self).__init__(
             projection_mode=projection_mode,
             criteria=criteria)
 
-        self.name = 'pifu_part'
-        self.gt_parts = None
-        self.parts = None
+        self.name = 'orig_pifu'
 
         in_ch = 3
         try:
@@ -42,7 +39,7 @@ class HGPIFuPart(BasePIFuNet):
         self.image_filter = HGFilter(opt.num_stack, opt.hg_depth, in_ch, opt.hg_dim,
                                     opt.norm, opt.hg_down, False)
 
-        self.mlp = MLP_PART(
+        self.mlp = MLP(
             filter_channels=self.opt.mlp_dim,
             merge_layer=self.opt.merge_layer,
             res_layers=self.opt.mlp_res_layers,
@@ -53,7 +50,6 @@ class HGPIFuPart(BasePIFuNet):
         self.spatial_enc = DepthNormalizer(opt)
 
         self.im_feat_list = []
-        self.intermediate_parts_list = []
         self.intermediate_preds_list = []
 
         init_net(self)
@@ -107,7 +103,7 @@ class HGPIFuPart(BasePIFuNet):
         if not self.training:
             self.im_feat_list = [self.im_feat_list[-1]]
 
-    def query(self, points, calibs, transforms=None, labels=None, parts=None):
+    def query(self, points, calibs, transforms=None, labels=None):
         '''
         give 3d points, obtain 2d projection of these given the camera matrices.
         filter needs to be called beforehand
@@ -121,7 +117,6 @@ class HGPIFuPart(BasePIFuNet):
             parts: [B, 26, N] ground truth parts (for supervision)
         '''
 
-        self.intermediate_parts_list = []
         self.intermediate_preds_list = []    
 
         xyz = self.projection(points, calibs, transforms)
@@ -140,47 +135,36 @@ class HGPIFuPart(BasePIFuNet):
         for i, im_feat in enumerate(self.im_feat_list):
             point_local_feat_list = [self.index(im_feat, xy), sp_feat]
             point_local_feat = torch.cat(point_local_feat_list, 1)
-            pred, part = self.mlp(point_local_feat)
+            pred, _ = self.mlp(point_local_feat)
             pred = in_bb * pred
 
-            self.intermediate_parts_list.append(part)
             self.intermediate_preds_list.append(pred)
 
-        self.parts = self.intermediate_parts_list[-1]
         self.preds = self.intermediate_preds_list[-1]
 
     def get_error(self):
-        error = {}
-        error['Err(occ)'] = 0.0
-        error['Err(part)'] = 0.0
-
-        for pred in self.intermediate_preds_list: 
-            error['Err(occ)'] += self.criteria['occ'](pred, self.labels)
-        error['Err(occ)'] /= len(self.intermediate_preds_list)
-
-        for part in self.intermediate_parts_list:
-            error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long()) * 0.1
-        error['Err(part)'] /= len(self.intermediate_parts_list)
-
+        '''
+        Hourglass has its own intermediate supervision scheme
+        '''
+        error = 0
+        for preds in self.intermediate_preds_list:
+            error += self.criteria['occ'](preds, self.labels)
+        error /= len(self.intermediate_preds_list)
+        
         return error
-
-    def get_part(self):
-        return self.parts.argmax(1)
 
     def get_im_feat(self):
         return self.im_feat_list[-1]
 
 
-    def forward(self, images, points, calibs, labels, parts, transforms=None):
-        self.gt_parts = parts
+    def forward(self, images, points, calibs, labels, transforms=None):
         self.labels = labels
 
         self.filter(images)
 
-        self.query(points=points, calibs=calibs, transforms=transforms, labels=labels, parts=parts)
+        self.query(points=points, calibs=calibs, transforms=transforms, labels=labels)
 
         res = self.get_preds()
-        part = self.get_part()
         error = self.get_error()
 
-        return res, error, part
+        return res, error

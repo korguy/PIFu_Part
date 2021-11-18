@@ -49,13 +49,14 @@ class MLP_PART(nn.Module):
 
         parts_softmax = self.fc_parts_softmax(out_parts) # [B, num_parts, N]
 
+        # OCCUPANCY CLASSIFICATION
         net_full = self.actvn(self.part_0(feature))
         net_full = self.actvn(self.part_1(net_full))
         net_full = self.actvn(self.part_2(net_full))
 
         net_full = self.part_out(net_full) # [B, num_parts, N]
-        net_full *= parts_softmax
-        out_full = net_full.mean(1).view(net_full.shape[0], 1, -1)
+        net_full *= parts_softmax 
+        out_full = net_full.mean(1).view(net_full.shape[0], 1, -1) # [B, 1, N]
 
         if self.last:
             out_full = self.last(out_full)

@@ -9,7 +9,7 @@ class MLP(nn.Module):
                  filter_channels, 
                  merge_layer=0,
                  res_layers=[],
-                 norm='group',
+                 norm=None,
                  last_op=None):
         super(MLP, self).__init__()
 
