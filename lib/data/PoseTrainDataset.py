@@ -28,7 +28,7 @@ def load_trimesh(root_dir):
 def save_samples_truncated_part(fname, points, part):
 	'''
 	points: [N, 3] points sampled from mesh
-	part: [N, 20] one hot vector representation
+	part: [N, 1] 
 	'''
 	r = ((255/20)*part).reshape((-1, 1))
 	g = (255//(part+1)).reshape((-1, 1))
@@ -212,9 +212,9 @@ class PoseTrainDataset(Dataset):
 		scale_intrinsic[2, 2] = scale / ortho_ratio
 		# Match image pixel space to image uv space
 		uv_intrinsic = np.identity(4)
-		uv_intrinsic[0, 0] = 1.0 / float(self.load_size // 2)
-		uv_intrinsic[1, 1] = 1.0 / float(self.load_size // 2)
-		uv_intrinsic[2, 2] = 1.0 / float(self.load_size // 2)
+		uv_intrinsic[0, 0] = 1.0 / float(self.load_size // 2 * 2)
+		uv_intrinsic[1, 1] = 1.0 / float(self.load_size // 2 * 2)
+		uv_intrinsic[2, 2] = 1.0 / float(self.load_size // 2 * 2)
 		# Transform under image pixel space
 		trans_intrinsic = np.identity(4)
 
