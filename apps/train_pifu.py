@@ -128,13 +128,13 @@ def train(opt):
 
             iter_data_time = time.time()
 
-            if train_idx % opt.freq_save_ply == 0 and train_idx != 0:
+            if train_idx % opt.freq_save_ply == 0:
                 save_path = os.path.join(opt.results_path, opt.name, f'pred_{epoch}_{train_idx}.ply')
                 r = res[0].cpu()
                 points = samples_tensor[0].transpose(0, 1).cpu()
                 save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
 
-            if train_idx % opt.freq_mesh == 0 and train_idx != 0:
+            if train_idx % opt.freq_mesh == 0:
                 with torch.no_grad():
                     set_eval()
                     for idx, test_data in enumerate(test_data_loader):
