@@ -28,6 +28,7 @@ from .sdf import create_grid, eval_grid_octree, eval_grid
 from skimage import measure
 import os
 from PIL import Image
+import cv2
 
 from numpy.linalg import inv
 
@@ -157,9 +158,7 @@ def gen_mesh(res, net, cuda, data, save_path, thresh=0.5, use_octree=True, compo
         save_img = (np.transpose(img[v].detach().cpu().numpy(), (1, 2, 0)) * 0.5 + 0.5)[:, :, :] * 255.0
         save_img_list.append(save_img)
     save_img = np.concatenate(save_img_list, axis=1)
-    save_img = save_img[...,:3]
-
-    Image.fromarray(np.uint8(save_img[:,:,::-1])).save(save_img_path)
+    cv2.imwrite(save_img_path, save_img)
 
     verts, faces, _, _ = reconstruction(net, cuda, calib, res, b_min, b_max, thresh, use_octree=use_octree, num_samples=50000)
     verts_tensor = torch.from_numpy(verts.T).unsqueeze(0).to(device=cuda).float()

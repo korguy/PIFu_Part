@@ -134,7 +134,6 @@ class PoseTrainDataset(Dataset):
         if self.opt.random_bg:
             self.bg_img_list = [os.path.join(self.BG, x) for x in os.listdir(self.BG)]
             self.bg_img_list.sort()
-        print("BG Images:", len(self.bg_img_list))
 
         self.B_MIN = np.array([-128, -28, -128]) / 128
         self.B_MAX = np.array([128, 228, 128]) / 128
@@ -156,12 +155,7 @@ class PoseTrainDataset(Dataset):
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
         ])
-        self.to_tensor_big = transforms.Compose([
-            transforms.Resize(self.load_size * 2),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
-        ])
-
+        
         # augmentation
         self.aug_trans = transforms.Compose([
             transforms.ColorJitter(brightness=opt.aug_bri, contrast=opt.aug_con, saturation=opt.aug_sat,
@@ -322,8 +316,8 @@ class PoseTrainDataset(Dataset):
             render = (1-mask).expand_as(render) * bg + render
 
             # for debug
-            render_numpy = (np.transpose(render.numpy(), (1,2,0)) *255.).astype(np.uint8)
-            Image.fromarray(render_numpy).save('./sample.png')
+#             render_numpy = (np.transpose(render.numpy(), (1,2,0)) *255.).astype(np.uint8)
+#             Image.fromarray(render_numpy).save('./sample.png')
 
         return {
             'img': render_list[0].detach(),
