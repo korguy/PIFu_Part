@@ -326,7 +326,7 @@ class PoseTrainDataset(Dataset):
             np.random.seed(1997)
             torch.manual_seed(1997)
 
-        if os.path.exists(os.path.join(self.CACHE, subject)):
+        if os.path.exists(os.path.join(self.CACHE, subject)) and self.opt.use_cache:
             samples = np.load(os.path.join(self.CACHE, subject, "samples.npy"))
             labels = np.load(os.path.join(self.CACHE, subject, "labels.npy"))
             parts = np.load(os.path.join(self.CACHE, subject, "parts.npy"))

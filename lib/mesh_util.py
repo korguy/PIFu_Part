@@ -26,6 +26,8 @@ import numpy as np
 import torch
 from .sdf import create_grid, eval_grid_octree, eval_grid
 from skimage import measure
+import os
+from PIL import Image
 
 from numpy.linalg import inv
 
@@ -145,7 +147,8 @@ def gen_mesh(res, net, cuda, data, save_path, thresh=0.5, use_octree=True, compo
 
     save_dir = "/".join(save_path.split("/")[:-1])
     name = save_path.split("/")[-1].split(".")[0]
-
+    os.makedirs(save_dir, exist_ok=True)
+                
     b_min = data['b_min']
     b_max = data['b_max']
     save_img_path = os.path.join(save_dir, name+".jpg")
@@ -161,21 +164,17 @@ def gen_mesh(res, net, cuda, data, save_path, thresh=0.5, use_octree=True, compo
     verts, faces, _, _ = reconstruction(net, cuda, calib, res, b_min, b_max, thresh, use_octree=use_octree, num_samples=50000)
     verts_tensor = torch.from_numpy(verts.T).unsqueeze(0).to(device=cuda).float()
 
-    color = np.zeros(verts.shape)
-    interval = 50000
-    for i in range(len(color) // interval + 1):
-        left = i * interval
-        if i == len(color) // interval:
-            right = -1
-        else:
-            right = (i + 1) * interval
-        pts = verts_tensor[:, None, :, left:right]
-        net.calc_normal(pts[0], calib)
-        nml = net.nmlF.detach().cpu().numpy()[0] * 0.5 + 0.5
-        color[left:right] = nml.T
+#     color = np.zeros(verts.shape)
+#     interval = 50000
+#     for i in range(len(color) // interval + 1):
+#         left = i * interval
+#         if i == len(color) // interval:
+#             right = -1
+#         else:
+#             right = (i + 1) * interval
+#         pts = verts_tensor[:, None, :, left:right]
+#         net.calc_normal(pts[0], calib)
+#         nml = net.nmlF.detach().cpu().numpy()[0] * 0.5 + 0.5
+#         color[left:right] = nml.T
 
-    save_obj_mesh_with_color(save_path, verts, faces, color)
-except Exception as e:
-    exc_type, exc_obj, exc_tb = sys.exc_info()
-    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    print(exc_type, fname, exc_tb.tb_lineno)
+    save_obj_mesh(save_path, verts, faces)

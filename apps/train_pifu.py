@@ -34,11 +34,11 @@ def train(opt):
 
     train_data_loader = DataLoader(train_dataset,
                                     batch_size=opt.batch_size, shuffle=not opt.serial_batches,
-                                    num_workers=opt.num_threads, pin_memory=opt.pin_memory)
+                                    num_workers=0, pin_memory=opt.pin_memory)
     print('train data size: ', len(train_data_loader))
     test_data_loader = DataLoader(test_dataset,
                                     batch_size=1, shuffle=True,
-                                    num_workers=opt.num_threads, pin_memory=opt.pin_memory)
+                                    num_workers=0, pin_memory=opt.pin_memory)
     print('test data size: ', len(test_data_loader))
 
     net = HGPIFu(opt, "orthogonal").to(device=cuda)
@@ -89,7 +89,7 @@ def train(opt):
 
             if train_idx % opt.freq_plot == 0:
                 print(
-                    f"Name: {opt.name} | Epoch: {epoch} | {train_idx}/{len(train_data_loader)} | Error: {error.get_item():.05f}  | LR: {scheduler.get_last_lr()[0]:.05f} | Sigma: {opt.sigma:.02f}")
+                    f"Name: {opt.name} | Epoch: {epoch} | {train_idx}/{len(train_data_loader)} | Error: {error.item():.05f}  | LR: {scheduler.get_last_lr()[0]:.05f} | Sigma: {opt.sigma:.02f}")
                 writer.add_scalar('training loss',
                                     error.item(),
                                     epoch * len(train_data_loader) + train_idx)

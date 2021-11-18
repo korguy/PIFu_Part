@@ -35,6 +35,7 @@ class BaseOptions():
 
         g_train.add_argument('--results_path', type=str, default="./runs")
         g_train.add_argument('--num_parts', type=int, default=21)
+        g_train.add_argument('--use_cache', action='store_true', default=False)
 
         g_train.add_argument('--bg_path', type=str, default='./val2017')
 
