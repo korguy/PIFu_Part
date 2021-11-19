@@ -94,7 +94,7 @@ def train(opt):
                                     error.item(),
                                     epoch * len(train_data_loader) + train_idx)
 
-            if train_idx % opt.freq_eval == 0 and train_idx != 0:
+            if train_idx % opt.freq_eval == 0:
                 print("Evaluating...")
                 with torch.no_grad():
                     set_eval()
@@ -109,7 +109,7 @@ def train(opt):
 
                         IOU, prec, recall = compute_acc(res_eval, labels_tensor)
 
-                        err_arr.append(sum_dict(eval_err).item())
+                        err_arr.append(eval_err.item())
                         IOU_arr.append(IOU.item())
                         prec_arr.append(prec.item())
                         recall_arr.append(recall.item())

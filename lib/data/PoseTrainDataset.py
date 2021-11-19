@@ -303,7 +303,6 @@ class PoseTrainDataset(Dataset):
         render = mask.expand_as(render) * render
 
         ## 여기까지 봄
-        render_list.append(render)
         calib_list.append(calib)
         extrinsic_list.append(extrinsic)
 
@@ -314,10 +313,9 @@ class PoseTrainDataset(Dataset):
             bg = self.to_tensor(bg)
 
             render = (1-mask).expand_as(render) * bg + render
-
-            # for debug
-#             render_numpy = (np.transpose(render.numpy(), (1,2,0)) *255.).astype(np.uint8)
-#             Image.fromarray(render_numpy).save('./sample.png')
+            render_list.append(render)
+        else:
+            render_list.append(render)
 
         return {
             'img': render_list[0].detach(),

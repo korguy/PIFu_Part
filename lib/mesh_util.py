@@ -163,17 +163,4 @@ def gen_mesh(res, net, cuda, data, save_path, thresh=0.5, use_octree=True, compo
     verts, faces, _, _ = reconstruction(net, cuda, calib, res, b_min, b_max, thresh, use_octree=use_octree, num_samples=50000)
     verts_tensor = torch.from_numpy(verts.T).unsqueeze(0).to(device=cuda).float()
 
-#     color = np.zeros(verts.shape)
-#     interval = 50000
-#     for i in range(len(color) // interval + 1):
-#         left = i * interval
-#         if i == len(color) // interval:
-#             right = -1
-#         else:
-#             right = (i + 1) * interval
-#         pts = verts_tensor[:, None, :, left:right]
-#         net.calc_normal(pts[0], calib)
-#         nml = net.nmlF.detach().cpu().numpy()[0] * 0.5 + 0.5
-#         color[left:right] = nml.T
-
     save_obj_mesh(save_path, verts, faces)
