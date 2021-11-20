@@ -32,6 +32,44 @@ import cv2
 
 from numpy.linalg import inv
 
+colorMap = {
+    0: np.array([255, 255, 255]), #head
+    1: np.array([0, 255, 0]), # neck
+    2: np.array([255, 255, 0]), # spine
+    3: np.array([0, 0, 255]), #hip
+    4: np.array([102, 255, 255]), #shoulder_l
+    5: np.array([0, 76, 255]), # upper_arm_l
+    6: np.array([255, 102, 102]), #lowerarm_l
+    7: np.array([0, 153, 0]), #hand_ l
+    8: np.array([204, 255, 153]), # finger_l
+    9: np.array([102, 255, 255]), #shoulder_l
+    10: np.array([0, 76, 255]), # upper_arm_l
+    11: np.array([255, 102, 102]), #lowerarm_l
+    12: np.array([0, 153, 0]), #hand_ l
+    13: np.array([204, 255, 153]), # finger_l
+    14: np.array([204, 102, 0]),# upperleg_l
+    15: np.array([51, 25, 255]), # lowerleg_l
+    16: np.array([255, 0, 0]), # foot_l
+    17: np.array([204, 102, 0]),# upperleg_l
+    18: np.array([51, 25, 255]), # lowerleg_l
+    19: np.array([255, 0, 0]), # foot_l
+    20: np.array([255, 255, 255]) # no_part
+}
+
+def reshape_sample_tensor(sample_tensor, num_views):
+    if num_views == 1:
+        return sample_tensor
+    # Need to repeat sample_tensor along the batch dim num_views times
+    sample_tensor = sample_tensor.unsqueeze(dim=1)
+    sample_tensor = sample_tensor.repeat(1, num_views, 1, 1)
+    sample_tensor = sample_tensor.view(
+        sample_tensor.shape[0] * sample_tensor.shape[1],
+        sample_tensor.shape[2],
+        sample_tensor.shape[3]
+    )
+    return sample_tensor
+
+
 def reconstruction(net, cuda, calib_tensor,
                    resolution, b_min, b_max, thresh=0.5,
                    use_octree=False, num_samples=10000, transform=None):
@@ -131,6 +169,52 @@ def save_obj_mesh_with_uv(mesh_path, verts, faces, uvs):
                                               f_plus[2], f_plus[2],
                                               f_plus[1], f_plus[1]))
     file.close()
+
+def gen_mesh_color(res, net, cuda, data, save_path, thresh=0.5, use_octree=True, components=False):
+    img = data['img'].to(device=cuda)
+    calib = data['calib'].to(device=cuda)
+
+    net.filter(img)
+
+    try:
+        if net.netF is not None:
+            img = torch.cat([img, net.nmlF], 0)
+        if net.netB is not None:
+            img = torch.cat([img, net.nmlB], 0)
+    except:
+        pass
+
+    save_dir = "/".join(save_path.split("/")[:-1])
+    name = save_path.split("/")[-1].split(".")[0]
+    os.makedirs(save_dir, exist_ok=True)
+                
+    b_min = data['b_min']
+    b_max = data['b_max']
+    save_img_path = os.path.join(save_dir, name+".jpg")
+    save_img_list = []
+    for v in range(img.shape[0]):
+        save_img = (np.transpose(img[v].detach().cpu().numpy(), (1, 2, 0)) * 0.5 + 0.5)[:, :, ::-1] * 255.0
+        save_img_list.append(save_img)
+    save_img = np.concatenate(save_img_list, axis=1)
+    cv2.imwrite(save_img_path, save_img)
+
+    verts, faces, _, _ = reconstruction(net, cuda, calib, res, b_min, b_max, thresh, use_octree=use_octree, num_samples=50000)
+    verts_tensor = torch.from_numpy(verts.T).unsqueeze(0).to(device=cuda).float()
+    verts_tensor = reshape_sample_tensor(verts_tensor, 1)
+
+    color = np.zeros(verts.shape)
+    interval = 10000
+    for i in range(len(color) // interval):
+        left = i * interval
+        right = i * interval
+        if i == len(color) // interval - 1:
+            right = -1
+        net.query(verts_tensor[:, :, left:right], calib)
+        part = net.get_part()[0].detach().cpu() 
+        rgb = colorMap[part]
+        color[left:right] = rgb
+
+    save_obj_mesh_with_color(save_path, verts, faces, color)
 
 def gen_mesh(res, net, cuda, data, save_path, thresh=0.5, use_octree=True, components=False):
     img = data['img'].to(device=cuda)
