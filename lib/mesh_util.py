@@ -155,7 +155,7 @@ def gen_mesh(res, net, cuda, data, save_path, thresh=0.5, use_octree=True, compo
     save_img_path = os.path.join(save_dir, name+".jpg")
     save_img_list = []
     for v in range(img.shape[0]):
-        save_img = (np.transpose(img[v].detach().cpu().numpy(), (1, 2, 0)) * 0.5 + 0.5)[:, :, :] * 255.0
+        save_img = (np.transpose(img[v].detach().cpu().numpy(), (1, 2, 0)) * 0.5 + 0.5)[:, :, ::-1] * 255.0
         save_img_list.append(save_img)
     save_img = np.concatenate(save_img_list, axis=1)
     cv2.imwrite(save_img_path, save_img)
