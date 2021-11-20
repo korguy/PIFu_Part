@@ -204,8 +204,6 @@ class PoseTrainDataset(Dataset):
         mask_list = []
         extrinsic_list = []
 
-        vid = view_ids[0]
-
         param_path = os.path.join(self.PARAM, subject, '%d_%d_%02d.npy' % (vid, pitch, 0))
         render_path = os.path.join(self.RENDER, subject, '%d_%d_%02d.jpg' % (vid, pitch, 0))
         mask_path = os.path.join(self.MASK, subject, '%d_%d_%02d.png' % (vid, pitch, 0))

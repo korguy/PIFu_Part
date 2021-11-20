@@ -18,6 +18,7 @@ from lib.options import BaseOptions
 from lib.data import *
 from lib.model import HGPIFuPart
 from lib.train_util import *
+from lib.mesh_util import *
 
 opt = BaseOptions().parse()
 summary_path = os.path.join('.', 'runs', f'{opt.name}')
@@ -57,7 +58,7 @@ def train(opt):
                                                     f"net_epoch_{opt.resume_epoch}")))
     optimizer = torch.optim.RMSprop(net.parameters(), lr=opt.learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    for _ in range(opt.resume_epoch):
+    for _ in range(opt.resume_epoch+1):
         scheduler.step()
 
     def set_train():
@@ -71,7 +72,7 @@ def train(opt):
     os.makedirs(os.path.join(opt.load_checkpoints_path, opt.name), exist_ok=True)
     os.makedirs(os.path.join(opt.results_path, opt.name), exist_ok=True)
 
-    start_epoch = 0 if opt.resume_epoch == -1 else max(opt.resume_epoch, 0)
+    start_epoch = 0 if opt.resume_epoch == -1 else max(opt.resume_epoch + 1, 0)
     for epoch in range(start_epoch, opt.num_epoch):
         epoch_start_time = time.time()
         iter_data_time = time.time()
@@ -151,7 +152,20 @@ def train(opt):
                 save_samples_truncated_part(save_path4, points.detach().numpy(), parts_tensor[0].cpu().detach().numpy())
                 save_samples_truncated_part(save_path2, points.detach().numpy(), part[0].cpu().numpy())
                 save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
-
+                
+            if train_idx % opt.freq_mesh == 0:
+                with torch.no_grad():
+                    set_eval()
+                    for idx, test_data in enumerate(test_data_loader):
+                        save_path = '%s/%s/recon/result_%d_%d.obj' % (opt.results_path, opt.name, epoch, train_idx)
+                        gen_mesh(opt.resolution, net, cuda, test_data, save_path, components=None)
+                        break
+                set_train()
+                
+            # for fast debugging
+            if train_idx > 10000:
+                break
+            
         torch.save(net.state_dict(), os.path.join(opt.load_checkpoints_path, opt.name, 'net_latest'))
         torch.save(net.state_dict(), os.path.join(opt.load_checkpoints_path, opt.name, f'net_epoch_{epoch}'))
         scheduler.step()
