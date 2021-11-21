@@ -27,6 +27,26 @@ def load_trimesh(root_dir):
                                       skip_uv=True)
     return meshs
 
+def save_samples_rgb(fname, points, rgb):
+    '''
+    Save the visualization of sampling to a ply file.
+    Red points represent positive predictions.
+    Green points represent negative predictions.
+    :param fname: File name to save
+    :param points: [N, 3] array of points
+    :param rgb: [N, 3] array of rgb values in the range [0~1]
+    :return:
+    '''
+    to_save = np.concatenate([points, rgb * 255], axis=-1)
+    return np.savetxt(fname,
+                      to_save,
+                      fmt='%.6f %.6f %.6f %d %d %d',
+                      comments='',
+                      header=(
+                          'ply\nformat ascii 1.0\nelement vertex {:d}\nproperty float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\nend_header').format(
+                          points.shape[0])
+                      )
+    
 def save_samples_truncated_part(fname, points, part):
     '''
     points: [N, 3] points sampled from mesh
