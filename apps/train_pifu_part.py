@@ -143,14 +143,10 @@ def train(opt):
 
             if train_idx % opt.freq_save_ply == 0 and train_idx != 0:
                 save_path = os.path.join(opt.results_path, opt.name, f'pred_{epoch}_{train_idx}.ply')
-                save_path2 = os.path.join(opt.results_path, opt.name, f'part_{epoch}_{train_idx}.ply')
-                save_path3 = os.path.join(opt.results_path, opt.name, f'in_pred_{epoch}_{train_idx}.ply')
-                save_path4 = os.path.join(opt.results_path, opt.name, f'in_part_{epoch}_{train_idx}.ply')
+                save_path2 = os.path.join(opt.results_path, opt.name, f'in_pred_{epoch}_{train_idx}.ply')
                 r = res[0].cpu()
                 points = samples_tensor[0].transpose(0, 1).cpu()
-                save_samples_truncated_prob(save_path3, points.detach().numpy(), labels_tensor[0].cpu().detach().numpy())
-                save_samples_truncated_part(save_path4, points.detach().numpy(), parts_tensor[0].cpu().detach().numpy())
-                save_samples_truncated_part(save_path2, points.detach().numpy(), part[0].cpu().numpy())
+                save_samples_truncated_prob(save_path2, points.detach().numpy(), labels_tensor[0].cpu().detach().numpy())
                 save_samples_truncated_prob(save_path, points.detach().numpy(), r.detach().numpy())
                 
             if train_idx % opt.freq_mesh == 0:
@@ -158,7 +154,7 @@ def train(opt):
                     set_eval()
                     for idx, test_data in enumerate(test_data_loader):
                         save_path = '%s/%s/recon/result_%d_%d.obj' % (opt.results_path, opt.name, epoch, train_idx)
-                        gen_mesh(opt.resolution, net, cuda, test_data, save_path, components=None)
+                        gen_mesh_color(opt.resolution, net, cuda, test_data, save_path, components=None)
                         break
                 set_train()
                 
