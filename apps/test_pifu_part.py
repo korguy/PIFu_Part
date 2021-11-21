@@ -58,6 +58,7 @@ def test(opt):
     with torch.no_grad():
         set_eval()
         err_part_arr, err_occ_arr, IOU_arr, prec_arr, recall_arr = [], [], [], [], []
+        np.random.seed(1997)
         rnd_sub = np.random.randint(0, high=len(test_data_loader))
         for idx, test_data in enumerate(test_data_loader, start=rnd_sub):
             img_tensor = test_data['img'].to(device=cuda)
@@ -76,7 +77,7 @@ def test(opt):
             prec_arr.append(prec.item())
             recall_arr.append(recall.item())
             save_path = '%s/%s/recon/result_%d.obj' % (opt.results_path, opt.name, opt.resume_epoch)
-            gen_mesh(opt.resolution, net, cuda, test_data, save_path, components=None)
+            gen_mesh_color(opt.resolution, net, cuda, test_data, save_path, components=None)
             break
         eval_errors = np.average(err_part_arr), np.average(err_occ_arr), np.average(IOU_arr), np.average(prec_arr), np.average(recall_arr)
         print('eval test err(part): {0:06f} | err(occ): {0:06f} | IOU: {1:06f} | prec: {2:06f} | recall: {3:06f}'.format(*eval_errors))    

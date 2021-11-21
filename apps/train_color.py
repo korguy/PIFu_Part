@@ -66,22 +66,22 @@ def train_color(opt):
     print('Using NetworkG: ', netG.name, 'networkC: ', netC.name)
 
     # load checkpoints
-    model_path_G = '%s/%s/netG_latest' % (opt.checkpoints_path, "part_pifu")
+    model_path_G = '%s/%s/net_latest' % (opt.load_checkpoints_path, "part_pifu")
     print('loading for net G ...', model_path_G)
     netG.load_state_dict(torch.load(model_path_G, map_location=cuda))
 
     if opt.continue_train:
         if opt.resume_epoch < 0:
-            model_path_C = '%s/%s/netC_latest' % (opt.checkpoints_path, opt.name)
+            model_path_C = '%s/%s/netC_latest' % (opt.load_checkpoints_path, opt.name)
         else:
-            model_path_C = '%s/%s/netC_epoch_%d' % (opt.checkpoints_path, opt.name, opt.resume_epoch)
+            model_path_C = '%s/%s/netC_epoch_%d' % (opt.load_checkpoints_path, opt.name, opt.resume_epoch)
 
         print('Resuming from ', model_path_C)
         netC.load_state_dict(torch.load(model_path_C, map_location=cuda))
 
-    os.makedirs(opt.checkpoints_path, exist_ok=True)
+    os.makedirs(opt.load_checkpoints_path, exist_ok=True)
     os.makedirs(opt.results_path, exist_ok=True)
-    os.makedirs('%s/%s' % (opt.checkpoints_path, opt.name), exist_ok=True)
+    os.makedirs('%s/%s' % (opt.load_checkpoints_path, opt.name), exist_ok=True)
     os.makedirs('%s/%s' % (opt.results_path, opt.name), exist_ok=True)
 
     opt_log = os.path.join(opt.results_path, opt.name, 'opt.txt')
@@ -126,8 +126,8 @@ def train_color(opt):
                         int(eta - 60 * (eta // 60))))
 
             if train_idx % opt.freq_save == 0 and train_idx != 0:
-                torch.save(netC.state_dict(), '%s/%s/netC_latest' % (opt.checkpoints_path, opt.name))
-                torch.save(netC.state_dict(), '%s/%s/netC_epoch_%d' % (opt.checkpoints_path, opt.name, epoch))
+                torch.save(netC.state_dict(), '%s/%s/netC_latest' % (opt.load_checkpoints_path, opt.name))
+                torch.save(netC.state_dict(), '%s/%s/netC_epoch_%d' % (opt.load_checkpoints_path, opt.name, epoch))
 
             if train_idx % opt.freq_save_ply == 0:
                 save_path = '%s/%s/pred_col.ply' % (opt.results_path, opt.name)

@@ -29,32 +29,53 @@ from skimage import measure
 import os
 from PIL import Image
 import cv2
+from collections import Counter
 
 from numpy.linalg import inv
 
 colorMap = {
-    0: np.array([255, 255, 255]), #head
-    1: np.array([0, 255, 0]), # neck
-    2: np.array([255, 255, 0]), # spine
-    3: np.array([0, 0, 255]), #hip
-    4: np.array([102, 255, 255]), #shoulder_l
-    5: np.array([0, 76, 255]), # upper_arm_l
-    6: np.array([255, 102, 102]), #lowerarm_l
-    7: np.array([0, 153, 0]), #hand_ l
-    8: np.array([204, 255, 153]), # finger_l
-    9: np.array([102, 255, 255]), #shoulder_l
-    10: np.array([0, 76, 255]), # upper_arm_l
-    11: np.array([255, 102, 102]), #lowerarm_l
-    12: np.array([0, 153, 0]), #hand_ l
-    13: np.array([204, 255, 153]), # finger_l
-    14: np.array([204, 102, 0]),# upperleg_l
-    15: np.array([51, 25, 255]), # lowerleg_l
-    16: np.array([255, 0, 0]), # foot_l
-    17: np.array([204, 102, 0]),# upperleg_l
-    18: np.array([51, 25, 255]), # lowerleg_l
-    19: np.array([255, 0, 0]), # foot_l
-    20: np.array([255, 255, 255]) # no_part
+    0: [0., 1.0, 0.], #head
+    1: [0., 0.625, 0.], # neck
+    2: [1, 1, 0], # spine
+    3: [0, 0, 1], #hip
+    4: [0.4, 1, 1], #shoulder_l
+    5: [0, 0.2, 1], # upper_arm_l
+    6: [1, 0.4, 0.4], #lowerarm_l
+    7: [0., 0., 0.625], #hand_ l
+    8: [0., 0., 0.875], # finger_l
+    9: [0.4, 1, 1], #shoulder_l
+    10: [0, 0.2, 1], # upper_arm_l
+    11: [1, 0.4, 0.4], #lowerarm_l
+    12: [0., 0., 0.75], #hand_ l
+    13: [0., 0., 1.0], # finger_l
+    14: [0.6, 0.4, 0],# upperleg_l
+    15: [0.2, 0.1, 1], # lowerleg_l
+    16: [1, 0, 0], # foot_l
+    17: [0.6, 0.4, 0],# upperleg_l
+    18: [0.2, 0.1, 1], # lowerleg_l
+    19: [1, 0, 0], # foot_l
+    20: [1, 1, 1] # no_part
 }
+
+(0.125, 0., 0.): 골반 (1)
+(0.25, 0., 0.): 왼쪽 허벅지 (2)
+(0.375, 0., 0.): 오른쪽 허벅지 (3)
+(0.5, 0., 0.): 상체 아래, 배 (4)
+(0.625, 0., 0.): 왼쪽 종아리 (5)
+(0.75, 0., 0.): 오른쪽 종아리 (6)
+(0.875, 0., 0.): 상체 중간 (7)
+(1., 0., 0.): 왼쪽 발목 (8)
+(0., 0.125, 0.): 오른쪽 발목 (9)
+(0., 0.25, 0.): 상체 윗쪽 (가슴, 윗등) (10) 
+(0., 0.375, 0.): 왼쪽 발꿈치 (11)
+(0., 0.5, 0.): 오른쪽 발꿈치 (12)
+(0., 0.75, 0.): 왼쪽 어깨 (14)
+(0., 0.875, 0.): 오른쪽 어깨 (15)
+(0., 0., 0.125): 왼쪽 상완 (17)
+(0., 0., 0.25): 오른쪽 상완 (18)
+(0., 0., 0.375): 왼전완 (19)
+(0., 0., 0.5): 오른전완 (20)
+(0., 0., 0.875): 왼손가락 (23)
 
 def reshape_sample_tensor(sample_tensor, num_views):
     if num_views == 1:
@@ -200,19 +221,20 @@ def gen_mesh_color(res, net, cuda, data, save_path, thresh=0.5, use_octree=True,
 
     verts, faces, _, _ = reconstruction(net, cuda, calib, res, b_min, b_max, thresh, use_octree=use_octree, num_samples=50000)
     verts_tensor = torch.from_numpy(verts.T).unsqueeze(0).to(device=cuda).float()
-    verts_tensor = reshape_sample_tensor(verts_tensor, 1)
-
+    
     color = np.zeros(verts.shape)
     interval = 10000
+    f = lambda x : colorMap[x]
     for i in range(len(color) // interval):
         left = i * interval
-        right = i * interval
+        right = i * interval + interval
         if i == len(color) // interval - 1:
             right = -1
         net.query(verts_tensor[:, :, left:right], calib)
-        part = net.get_part()[0].detach().cpu() 
-        rgb = colorMap[part]
-        color[left:right] = rgb
+        part = net.get_part()[0].detach().cpu().numpy()
+        rgb = list(map(f, part))
+#         print(Counter(part))
+        color[left:right] = np.array(rgb) * 0.5 + 0.5
 
     save_obj_mesh_with_color(save_path, verts, faces, color)
 

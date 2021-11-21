@@ -45,7 +45,7 @@ class BaseOptions():
 
         g_sample = parser.add_argument_group('Sampling')
         g_sample.add_argument('--num_sample_inout', type=int, default=8000)
-        g_sample.add_argument('--num_sample_color', type=int, default=0)	
+        g_sample.add_argument('--num_sample_color', type=int, default=0)
         g_sample.add_argument('--sigma', type=float, default=0.1, help='sigma for sampling')
         g_sample.add_argument('--sigma_surface', type=float, default=1.0, help='sigma for sampling')
 
@@ -54,6 +54,10 @@ class BaseOptions():
         g_model = parser.add_argument_group('Model')
         g_model.add_argument('--norm', type=str, default='batch')
         g_model.add_argument('--netG', type=str, default='hgpifu')
+        
+        g_model.add_argument('--norm_color', type=str, default='instance',
+                             help='instance normalization or batch normalization or group normalization')
+        parser.add_argument('--color_loss_type', type=str, default='l1', help='mse | l1')
 
         g_model.add_argument('--num_stack', type=int, default=4)
         g_model.add_argument('--hg_depth', type=int, default=2)

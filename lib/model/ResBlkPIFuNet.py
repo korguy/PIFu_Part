@@ -6,19 +6,16 @@ import functools
 from .SurfaceClassifier import SurfaceClassifier
 from .DepthNormalizer import DepthNormalizer
 from ..net_util import *
+from ..networks import *
 
 
 class ResBlkPIFuNet(BasePIFuNet):
     def __init__(self, opt,
                  projection_mode='orthogonal'):
-        if opt.color_loss_type == 'l1':
-            error_term = nn.L1Loss()
-        elif opt.color_loss_type == 'mse':
-            error_term = nn.MSELoss()
 
         super(ResBlkPIFuNet, self).__init__(
-            projection_mode=projection_mode,
-            error_term=error_term)
+            projection_mode=projection_mode)
+        self.error_term = nn.L1Loss()
 
         self.name = 'respifu'
         self.opt = opt
@@ -28,8 +25,8 @@ class ResBlkPIFuNet(BasePIFuNet):
 
         self.surface_classifier = SurfaceClassifier(
             filter_channels=self.opt.mlp_dim_color,
-            num_views=self.opt.num_views,
-            no_residual=self.opt.no_residual,
+            num_views=1,
+            no_residual=False,
             last_op=nn.Tanh())
 
         self.normalizer = DepthNormalizer(opt)
@@ -74,6 +71,8 @@ class ResBlkPIFuNet(BasePIFuNet):
         point_local_feat = torch.cat(point_local_feat_list, 1)
 
         self.preds = self.surface_classifier(point_local_feat)
+    def get_error():
+        return self.error_term(self.preds, self.labels)
 
     def forward(self, images, im_feat, points, calibs, transforms=None, labels=None):
         self.filter(images)
@@ -191,9 +190,6 @@ class ResnetFilter(nn.Module):
             else:
                 model += [ResnetBlock(ngf * mult, padding_type=padding_type, norm_layer=norm_layer,
                                       use_dropout=use_dropout, use_bias=use_bias)]
-
-        if opt.use_tanh:
-            model += [nn.Tanh()]
         self.model = nn.Sequential(*model)
 
     def forward(self, input):
