@@ -38,6 +38,7 @@ class BaseOptions():
         g_train.add_argument('--use_cache', action='store_true', default=False)
 
         g_train.add_argument('--bg_path', type=str, default='./val2017')
+        g_train.add_argument('--skip_render', action='store_true')
 
 
         g_test = parser.add_argument_group('Testing')

@@ -18,6 +18,34 @@ from sklearn.neighbors import NearestNeighbors
 log = logging.getLogger('trimesh')
 log.setLevel(40)
 
+colorMap = {
+    0 : [0.125, 0., 0.],
+    1 : [0.25, 0., 0.],
+    2: [0.375, 0., 0.],
+    3: [0.5, 0., 0.],
+    4: [0.625, 0., 0.],
+    5: [0.75, 0., 0.],
+    6: [0.875, 0., 0.],
+    7: [1., 0., 0.],
+    8: [0., 0.125, 0.],
+    9: [0., 0.25, 0.],
+    10: [0., 0.375, 0.],
+    11: [0., 0.5, 0.],
+    12: [0., 0.625, 0.],
+    13: [0., 0.75, 0.],
+    14: [0., 0.875, 0.],
+    15: [0., 1.0, 0.],
+    16: [0., 0., 0.125],
+    17: [0., 0., 0.25],
+    18: [0., 0., 0.375],
+    19: [0., 0., 0.5],
+    20: [0., 0., 0.625],
+    21: [0., 0., 0.75],
+    22: [0., 0., 0.875],
+    23: [0., 0., 1.],
+    24: [1., 1., 1.]
+}
+
 def load_trimesh(root_dir):
     folders = os.listdir(root_dir)
     meshs = {}
@@ -52,11 +80,10 @@ def save_samples_truncated_part(fname, points, part):
     points: [N, 3] points sampled from mesh
     part: [N, 1] 
     '''
-    r = ((255/20)*part).reshape((-1, 1))
-    g = (255//(part+1)).reshape((-1, 1))
-    b = (255/20*(20-part)).reshape((-1, 1))
+    f = lambda x : colorMap[x]
+    rgb = list(map(f, part))
 
-    to_save = np.concatenate([points, r,g, b], axis=-1)
+    to_save = np.concatenate([points, rgb], axis=-1)
     return np.savetxt(fname,
                   to_save,
                   fmt='%.6f %.6f %.6f %d %d %d',
@@ -121,7 +148,7 @@ def chamfer_distance(x, y, json_data, body_parts, metric='l2', apply_filter=Fals
     ret = f(idx)
     if apply_filter:
         dist = np.where(dist > th)
-        idx[dist] = 20
+        idx[dist] = 24
     return ret
 
 class PoseTrainDataset(Dataset):
@@ -386,11 +413,12 @@ class PoseTrainDataset(Dataset):
                          :self.num_sample_inout // 8 * 3] if nin > self.num_sample_inout // 2 else outside_points[
                                                                                                :(self.num_sample_inout - nin)]
         # parts	
-        body_parts = [ 'head', 'neck','spine', 'hip', 
-               'shoulder_l', 'upperarm_l', 'lowerarm_l', 'hand_l', 'finger_l',
-               'shoulder_r', 'upperarm_r', 'lowerarm_r', 'hand_r', 'finger_r',  
-               'upperleg_l', 'lowerleg_l', 'foot_l', 
-               'upperleg_r', 'lowerleg_r', 'foot_r'] 							
+        body_parts = [ 'hip', 'upperleg_l','upperleg_r', 'spine_03', 
+           'lowerleg_l', 'lowerleg_r', 'spine_02', 'foot_l', 'foot_r',
+           'spine_01', 'toe_l', 'toe_r', 'neck', 'shoulder_l',  
+           'shoulder_r', 'head', 'upperarm_l', 
+           'upperarm_r', 'lowerarm_l', 'lowerarm_r', 'hand_l', 'hand_r',
+           'finger_l', 'finger_r'] 							
 
         with open(os.path.join(self.PART, subject, "%s_part.json" % subject.split('_')[0])) as f: 
             json_data = json.load(f)
@@ -494,8 +522,9 @@ class PoseTrainDataset(Dataset):
             'b_min': self.B_MIN,
             'b_max': self.B_MAX,
         }
-        render_data = self.get_render(subject, num_views=self.num_views, yid=yid, pid=pid)
-        res.update(render_data)
+        if not self.opt.skip_render:
+            render_data = self.get_render(subject, num_views=self.num_views, yid=yid, pid=pid)
+            res.update(render_data)
 
         if self.opt.num_sample_inout:
             sample_data = self.select_sampling_method(subject)
