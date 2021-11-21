@@ -217,7 +217,6 @@ def gen_mesh_color(res, net, cuda, data, save_path, thresh=0.5, use_octree=True,
         net.query(verts_tensor[:, :, left:right], calib)
         part = net.get_part()[0].detach().cpu().numpy()
         rgb = list(map(f, part))
-#         print(Counter(part))
         color[left:right] = np.array(rgb) * 0.5 + 0.5
 
     save_obj_mesh_with_color(save_path, verts, faces, color)
