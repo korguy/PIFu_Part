@@ -8,6 +8,8 @@ from .DepthNormalizer import DepthNormalizer
 from .HGFilters import HGFilter
 from ..net_util import init_net
 from ..networks import define_G
+from sklearn.utils import class_weight
+
 
 class HGPIFuPart(BasePIFuNet):
     '''
@@ -60,6 +62,8 @@ class HGPIFuPart(BasePIFuNet):
 
         self.netF = None
         self.netB = None
+
+        self.class_weights = None
 
         try:
             if opt.use_front_normal:
@@ -161,7 +165,7 @@ class HGPIFuPart(BasePIFuNet):
         error['Err(occ)'] /= len(self.intermediate_preds_list)
 
         for part in self.intermediate_parts_list:
-            error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long()) * 0.1
+            error['Err(part)'] += self.criteria['part'](part, self.gt_parts.long(), weight=self.class_weights) * 0.05
         error['Err(part)'] /= len(self.intermediate_parts_list)
 
         return error
@@ -176,6 +180,7 @@ class HGPIFuPart(BasePIFuNet):
     def forward(self, images, points, calibs, labels, parts, transforms=None):
         self.gt_parts = parts
         self.labels = labels
+        self.class_weight.compute_class_weight('balanced',np.unique(gt_parts),gt_parts.detach().numpy())
 
         self.filter(images)
 
