@@ -180,7 +180,7 @@ class HGPIFuPart(BasePIFuNet):
     def forward(self, images, points, calibs, labels, parts, transforms=None):
         self.gt_parts = parts
         self.labels = labels
-        self.class_weight = class_weight.compute_class_weight('balanced',np.unique(parts), parts.detach().cpu().numpy())
+        self.class_weight = class_weight.compute_class_weight('balanced',np.unique(parts.cpu()), parts.detach().cpu().numpy())
 
         self.filter(images)
 
