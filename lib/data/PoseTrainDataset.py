@@ -19,31 +19,31 @@ log = logging.getLogger('trimesh')
 log.setLevel(40)
 
 colorMap = {
-    0 : [0.125, 0., 0.],
-    1 : [0.25, 0., 0.],
-    2: [0.375, 0., 0.],
-    3: [0.5, 0., 0.],
-    4: [0.625, 0., 0.],
-    5: [0.75, 0., 0.],
-    6: [0.875, 0., 0.],
-    7: [1., 0., 0.],
-    8: [0., 0.125, 0.],
-    9: [0., 0.25, 0.],
-    10: [0., 0.375, 0.],
-    11: [0., 0.5, 0.],
-    12: [0., 0.625, 0.],
-    13: [0., 0.75, 0.],
-    14: [0., 0.875, 0.],
-    15: [0., 1.0, 0.],
-    16: [0., 0., 0.125],
-    17: [0., 0., 0.25],
-    18: [0., 0., 0.375],
-    19: [0., 0., 0.5],
-    20: [0., 0., 0.625],
-    21: [0., 0., 0.75],
-    22: [0., 0., 0.875],
-    23: [0., 0., 1.],
-    24: [1., 1., 1.]
+    0 : [0.125, 0., 0.], # hip
+    1 : [0.25, 0., 0.], # upperleg_l
+    2: [0.375, 0., 0.], # upperleg_r
+    3: [0.5, 0., 0.], # spine03
+    4: [0.625, 0., 0.], # lowerleg_l
+    5: [0.75, 0., 0.], #lowerleg_r
+    6: [0.875, 0., 0.], # spine02
+    7: [1., 0., 0.], # foot_l
+    8: [0., 0.125, 0.], #foot_r
+    9: [0., 0.25, 0.], #spine_01
+    10: [0., 0.375, 0.], #toe_l
+    11: [0., 0.5, 0.], #toe_r
+    12: [0., 0.625, 0.], #neck
+    13: [0., 0.75, 0.], # shoulder_l
+    14: [0., 0.875, 0.], # shoulder_r
+    15: [0., 1.0, 0.], # head
+    16: [0., 0., 0.125], #upperarm_l
+    17: [0., 0., 0.25], # upperarm_r
+    18: [0., 0., 0.375], # lowerarm_l
+    19: [0., 0., 0.5], # lowerarm_r
+    20: [0., 0., 0.625], # hand_l
+    21: [0., 0., 0.75], # hand_r
+    22: [0., 0., 0.875], #finger_l
+    23: [0., 0., 1.], #finger_r
+    24: [1., 1., 1.] # other
 }
 
 def load_trimesh(root_dir):
@@ -223,7 +223,7 @@ class PoseTrainDataset(Dataset):
             return sorted(list(var_subjects))
 
     def __len__(self):
-        return len(self.subjects) * len(self.yaw_list) * len(self.pitch_list)
+        return len(self.subjects)
 
     def get_render(self, subject, num_views, yid=0, pid=0, random_sample=False):
         '''
@@ -515,7 +515,7 @@ class PoseTrainDataset(Dataset):
         subject = self.subjects[sid]
         res = {
             'name': subject,
-            'mesh_path': os.path.join(self.OBJ, subject + '.obj'),
+            'mesh_path': os.path.join(self.OBJ, subject, subject + '_posed.obj'),
             'sid': sid,
             'yid': yid,
             'pid': pid,
