@@ -165,7 +165,9 @@ class PoseTrainDataset(Dataset):
         self.num_sample_inout = self.opt.num_sample_inout
         self.num_sample_color = self.opt.num_sample_color
 
-        self.yaw_list = list(range(0,360,1))
+        self.step = self.opt.step
+
+        self.yaw_list = list(range(0,360,self.step))
         self.pitch_list = [0]
         self.subjects = self.get_subjects()
 
@@ -196,7 +198,7 @@ class PoseTrainDataset(Dataset):
             return sorted(list(var_subjects))
 
     def __len__(self):
-        return len(self.subjects)
+        return len(self.subjects) * len(yaw_list)
 
     def get_render(self, subject, num_views, yid=0, pid=0, random_sample=False):
         '''
@@ -481,8 +483,8 @@ class PoseTrainDataset(Dataset):
         # try:
         sid = index % len(self.subjects)
         tmp = index // len(self.subjects)
-        yid = tmp % len(self.yaw_list)
-        pid = tmp // len(self.yaw_list)
+        yid = tmp % len(self.yaw_list) * self.step
+        pid = tmp // len(self.yaw_list) * self.step
 
         # name of the subject 'rp_xxxx_xxx'
         subject = self.subjects[sid]
@@ -503,23 +505,11 @@ class PoseTrainDataset(Dataset):
             sample_data = self.select_sampling_method(subject)
             res.update(sample_data)
 
-        # img = np.uint8((np.transpose(render_data['img'][0].numpy(), (1, 2, 0)) * 0.5 + 0.5)[:, :, ::-1] * 255.0)
-        # rot = render_data['calib'][0,:3, :3]
-        # trans = render_data['calib'][0,:3, 3:4]
-        # pts = torch.addmm(trans, rot, sample_data['samples'][:, sample_data['labels'][0] > 0.5])  # [3, N]
-        # pts = 0.5 * (pts.numpy().T + 1.0) * render_data['img'].size(2)
-        # for p in pts:
-        #     img = cv2.circle(img, (p[0], p[1]), 2, (0,255,0), -1)
-        # cv2.imshow('test', img)
-        # cv2.waitKey(1)
-
         if self.num_sample_color:
             color_data = self.get_color_sampling(subject, yid=yid, pid=pid)
             res.update(color_data)
         return res
-        # except Exception as e:
-        #     print(e)
-        #     return self.get_item(index=random.randint(0, self.__len__() - 1))
+        
 
     def __getitem__(self, index):
         return self.get_item(index)

@@ -32,10 +32,12 @@ class BaseOptions():
                                 help='if true, takes images in order to make batches, otherwise takes them randomly')
         g_train.add_argument('--num_threads', default=1, type=int, help='# sthreads for loading data')
         g_train.add_argument('--pin_memory', action='store_true', help='pin_memory')
+        g_train.add_argument('--use_full_images', action='store_true', help='use all 360 images')
 
         g_train.add_argument('--results_path', type=str, default="./runs")
         g_train.add_argument('--num_parts', type=int, default=25)
         g_train.add_argument('--use_cache', action='store_true', default=False)
+        g_train.add_argument('--step', type=int, default=1)
 
         g_train.add_argument('--bg_path', type=str, default='./val2017')
         g_train.add_argument('--skip_render', action='store_true')
