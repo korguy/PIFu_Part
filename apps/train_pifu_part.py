@@ -58,8 +58,6 @@ def train(opt):
                                                     f"net_epoch_{opt.resume_epoch}")))
     optimizer = torch.optim.RMSprop(net.parameters(), lr=opt.learning_rate)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
-    for _ in range(opt.resume_epoch+1):
-        scheduler.step()
 
     def set_train():
         net.train()
