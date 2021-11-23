@@ -198,7 +198,7 @@ class PoseTrainDataset(Dataset):
             return sorted(list(var_subjects))
 
     def __len__(self):
-        return len(self.subjects) * len(yaw_list)
+        return len(self.subjects) * len(self.yaw_list)
 
     def get_render(self, subject, num_views, yid=0, pid=0, random_sample=False):
         '''
