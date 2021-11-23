@@ -218,6 +218,7 @@ class PoseTrainDataset(Dataset):
         # The ids are an even distribution of num_views around view_id
         view_ids = [self.yaw_list[(yid + len(self.yaw_list) // num_views * offset) % len(self.yaw_list)]
                     for offset in range(num_views)]
+                    
         if random_sample:
             view_ids = np.random.choice(self.yaw_list, num_views, replace=False)
 
